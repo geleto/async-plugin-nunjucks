@@ -1,0 +1,43 @@
+{
+	"extends": "standard-with-typescript",
+	"env": {
+		"browser": false,
+		"es2021": true
+	},
+	"parserOptions": {
+		"ecmaVersion": "latest",
+		"sourceType": "module"
+	},
+	"ignorePatterns": ["out/"],
+	"rules": {
+		"@typescript-eslint/indent": ["error", "tab"],
+		"indent":["error", "tab", { "SwitchCase": 1 }],
+		"no-tabs": [0],
+
+		"semi": [1, "always", { "omitLastInOneLineBlock": true}],
+		"@typescript-eslint/semi": ["error", "always", { "omitLastInOneLineBlock": true}],
+
+		"no-underscore-dangle": ["error", { "allowAfterThis": true }],
+		"no-new": "off",
+		"@typescript-eslint/no-this-alias": "off",
+
+		"max-len": ["error", { "code": 180 }],
+		"no-multi-str": "off",
+		"spaced-comment": "off",
+
+		"@typescript-eslint/consistent-type-definitions": "off",
+		"@typescript-eslint/space-before-function-paren": "off",
+
+		"@typescript-eslint/explicit-function-return-type": ["off", {
+			"allowExpressions": true,
+			"allowTypedFunctionExpressions": true
+		}],
+		"@typescript-eslint/member-delimiter-style": ["error", {
+			"multiline": { "delimiter": "semi" },
+			"singleline": { "delimiter": "comma" }
+		}],
+		"@typescript-eslint/strict-boolean-expressions": "off",//rely on tsconfig strictNullChecks instead
+		"@typescript-eslint/restrict-template-expressions": "off",
+		"@typescript-eslint/non-nullable-type-assertion-style": "off"
+	}
+}

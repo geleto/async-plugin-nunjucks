@@ -20,7 +20,8 @@
     "build:esm": "tsc",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -41,6 +42,10 @@
   },
   "homepage": "https://github.com/geleto/async-plugin-nunjucks#readme",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.1.0",
+    "@typescript-eslint/parser": "^8.1.0",
+    "eslint": "^9.9.0",
+    "globals": "^15.9.0",
     "typescript": "^5.2.2"
   },
   "peerDependencies": {
