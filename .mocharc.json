@@ -1,0 +1,11 @@
+{
+	"extensions": [
+		"ts"
+	],
+	"spec": [
+		"**/*.spec.*"
+	],
+	"require": [
+		"./register-ts-node.js"
+	]
+}

@@ -1,22 +1,31 @@
 {
-    "compilerOptions": {
-        "module": "ESNext",
-        "target": "ES2018",
-        "lib": ["ESNext", "DOM"],
-        "outDir": "dist/esm",
-        "rootDir": "src",
-        "sourceMap": true,
-        "strict": true,
-        "strictNullChecks": true,
-        "moduleResolution": "node",
-        "resolveJsonModule": true,
-        "esModuleInterop": true,
-        "declaration": true,
-        "declarationMap": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noImplicitReturns": true
-    },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist"]
+	"compilerOptions": {
+		"module": "ESNext",
+		"target": "ES2018",
+		"lib": [
+			"ESNext",
+			"DOM"
+		],
+		"outDir": "dist/esm",
+		"rootDir": "./",
+		"sourceMap": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"esModuleInterop": true,
+		"declaration": true,
+		"declarationMap": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true
+	},
+	"include": [
+		"src/**/*",
+		"tests/**/*.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"dist"
+	]
 }

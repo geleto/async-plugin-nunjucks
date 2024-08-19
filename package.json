@@ -1,54 +1,61 @@
 {
-  "name": "async-plugin-nunjucks",
-  "version": "0.9.0",
-  "description": "Async context properties for the nunjucks template engine",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    }
-  },
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
-  "files": [
-    "dist/"
-  ],
-  "scripts": {
-    "build": "npm run build:esm && npm run build:cjs",
-    "build:esm": "tsc",
-    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "npm run build",
-    "lint": "eslint ."
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/geleto/async-plugin-nunjucks.git"
-  },
-  "keywords": [
-    "nunjucks",
-    "plugin",
-    "async",
-    "properties",
-    "variables",
-    "context"
-  ],
-  "author": "Angel Popov",
-  "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/geleto/async-plugin-nunjucks/issues"
-  },
-  "homepage": "https://github.com/geleto/async-plugin-nunjucks#readme",
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.1.0",
-    "@typescript-eslint/parser": "^8.1.0",
-    "eslint": "^9.9.0",
-    "globals": "^15.9.0",
-    "typescript": "^5.2.2"
-  },
-  "peerDependencies": {
-    "nunjucks": "^3.0.0"
-  }
+	"name": "async-plugin-nunjucks",
+	"version": "0.9.0",
+	"description": "Async context properties for the nunjucks template engine",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/esm/index.js",
+			"require": "./dist/cjs/index.js"
+		}
+	},
+	"main": "./dist/cjs/index.js",
+	"module": "./dist/esm/index.js",
+	"types": "./dist/esm/index.d.ts",
+	"files": [
+		"dist/"
+	],
+	"scripts": {
+		"build": "npm run build:esm && npm run build:cjs",
+		"build:esm": "tsc",
+		"build:cjs": "tsc --module commonjs --outDir dist/cjs",
+		"prepublishOnly": "npm run build",
+		"lint": "eslint .",
+		"test": "mocha -r ts-node/register 'tests/**/*.ts' --exclude node_modules/**/*.spec.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/geleto/async-plugin-nunjucks.git"
+	},
+	"keywords": [
+		"nunjucks",
+		"plugin",
+		"async",
+		"properties",
+		"variables",
+		"context"
+	],
+	"author": "Angel Popov",
+	"license": "Apache-2.0",
+	"bugs": {
+		"url": "https://github.com/geleto/async-plugin-nunjucks/issues"
+	},
+	"homepage": "https://github.com/geleto/async-plugin-nunjucks#readme",
+	"devDependencies": {
+		"@types/chai": "^4.3.17",
+		"@types/mocha": "^10.0.7",
+		"@types/node": "^22.4.1",
+		"@typescript-eslint/eslint-plugin": "^8.1.0",
+		"@typescript-eslint/parser": "^8.1.0",
+		"chai": "^5.1.1",
+		"eslint": "^9.9.0",
+		"esm": "^3.2.25",
+		"globals": "^15.9.0",
+		"mocha": "^10.7.3",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.5.4"
+	},
+	"peerDependencies": {
+		"nunjucks": "^3.0.0"
+	}
 }
