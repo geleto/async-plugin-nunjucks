@@ -6,7 +6,8 @@
 	"exports": {
 		".": {
 			"import": "./dist/esm/index.js",
-			"require": "./dist/cjs/index.js"
+			"require": "./dist/cjs/index.js",
+			"types": "./dist/esm/index.d.ts"
 		}
 	},
 	"main": "./dist/cjs/index.js",
@@ -17,11 +18,12 @@
 	],
 	"scripts": {
 		"build": "npm run build:esm && npm run build:cjs",
-		"build:esm": "tsc",
-		"build:cjs": "tsc --module commonjs --outDir dist/cjs",
+		"build:esm": "tsc --rootDir src",
+		"build:cjs": "tsc --module commonjs --rootDir src",
 		"prepublishOnly": "npm run build",
 		"lint": "eslint .",
-		"test": "mocha -r ts-node/register 'tests/**/*.ts' --exclude node_modules/**/*.spec.js"
+		"pretest": "npm run build:esm",
+		"test": "mocha --experimental-vm-modules --loader=ts-node/esm 'tests/**/*.ts'"
 	},
 	"repository": {
 		"type": "git",
@@ -45,6 +47,7 @@
 		"@types/chai": "^4.3.17",
 		"@types/mocha": "^10.0.7",
 		"@types/node": "^22.4.1",
+		"@types/nunjucks": "^3.2.6",
 		"@typescript-eslint/eslint-plugin": "^8.1.0",
 		"@typescript-eslint/parser": "^8.1.0",
 		"chai": "^5.1.1",
@@ -53,9 +56,10 @@
 		"globals": "^15.9.0",
 		"mocha": "^10.7.3",
 		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
 		"typescript": "^5.5.4"
 	},
 	"peerDependencies": {
-		"nunjucks": "^3.0.0"
+		"nunjucks": "^3.2.4"
 	}
 }

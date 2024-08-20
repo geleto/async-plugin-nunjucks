@@ -6,7 +6,7 @@ import globals from 'globals';
 export default [
 	eslint.configs.recommended,
 	{
-		files: ['src/**/*.ts', 'src/**/*.tsx'],
+		files: ['src/**/*.ts', 'tests/**/*.ts'],
 		ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/out/**'],
 		languageOptions: {
 			parser: tseslintParser,
@@ -18,6 +18,7 @@ export default [
 			},
 			globals: {
 				...globals.es2021,
+				...globals.node,
 			},
 		},
 		plugins: {
@@ -27,37 +28,19 @@ export default [
 			...tseslint.configs.recommended.rules,
 			'indent': ['error', 'tab', { SwitchCase: 1 }],
 			'no-tabs': 'off',
-
 			'semi': ['warn', 'always', { omitLastInOneLineBlock: true }],
-
-
 			'no-underscore-dangle': ['error', { allowAfterThis: true }],
 			'no-new': 'off',
 			'@typescript-eslint/no-this-alias': 'off',
-
 			'max-len': ['error', { code: 180 }],
 			'no-multi-str': 'off',
 			'spaced-comment': 'off',
-
 			'@typescript-eslint/consistent-type-definitions': 'off',
 			'@typescript-eslint/space-before-function-paren': 'off',
-
 			'@typescript-eslint/explicit-function-return-type': 'off',
-
-			/*'comma-dangle': ['error', {
-				arrays: 'never',
-				objects: 'never',
-				imports: 'never',
-				exports: 'never',
-				functions: 'never'
-			}],
-			'semi-style': ['error', 'last'],*/
-
-
-			'@typescript-eslint/strict-boolean-expressions': 'off', // rely on tsconfig strictNullChecks instead
+			'@typescript-eslint/strict-boolean-expressions': 'off',
 			'@typescript-eslint/restrict-template-expressions': 'off',
-			'@typescript-eslint/no-non-null-assertion': 'off', // equivalent to non-nullable-type-assertion-style
-
+			'@typescript-eslint/no-non-null-assertion': 'off',
 			'no-undef': 'off', // TypeScript handles this
 		},
 	},

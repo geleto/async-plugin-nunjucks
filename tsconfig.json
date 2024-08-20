@@ -7,7 +7,7 @@
 			"DOM"
 		],
 		"outDir": "dist/esm",
-		"rootDir": "./",
+		"rootDir": "src",
 		"sourceMap": true,
 		"strict": true,
 		"strictNullChecks": true,
@@ -18,14 +18,29 @@
 		"declarationMap": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"noImplicitReturns": true
+		"noImplicitReturns": true,
+		"baseUrl": "src",
+		"typeRoots": [
+			"./node_modules/@types",
+			"./types"
+		],
+		"paths": {
+			"*": [
+				"../node_modules/*",
+				"../types/*"
+			]
+		}
 	},
 	"include": [
-		"src/**/*",
-		"tests/**/*.ts"
+		"src/**/*.ts",
+		"types/**/*.d.ts"
 	],
 	"exclude": [
 		"node_modules",
 		"dist"
-	]
+	],
+	"ts-node": {
+		"esm": true,
+		"experimentalSpecifierResolution": "node"
+	}
 }
