@@ -23,7 +23,9 @@
 		"prepublishOnly": "npm run build",
 		"lint": "eslint .",
 		"pretest": "npm run build:esm",
-		"test": "mocha --experimental-vm-modules --loader=ts-node/esm 'tests/**/*.ts'"
+		"test": "mocha --experimental-vm-modules --loader=ts-node/esm --project ./tests/tsconfig.json 'tests/**/*.ts'",
+		"test2": "mocha --experimental-vm-modules --loader=ts-node/esm --project ./tests/tsconfig.json 'tests/**/*.ts'",
+		"test3": "node ./out/test/runTest.js"
 	},
 	"repository": {
 		"type": "git",

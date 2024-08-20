@@ -1,3 +1,4 @@
+
 declare module 'nunjucks/src/lexer' {
 	export const TOKEN_STRING: 'string';
 	export const TOKEN_WHITESPACE: 'whitespace';
