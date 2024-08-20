@@ -13,7 +13,7 @@ export default [
 			parserOptions: {
 				ecmaVersion: 'latest',
 				sourceType: 'module',
-				project: './tsconfig.json',
+				project: ['./tsconfig.json', './tests/tsconfig.json'],
 				tsconfigRootDir: '.',
 			},
 			globals: {
