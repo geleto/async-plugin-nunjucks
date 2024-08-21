@@ -1,28 +1,28 @@
 {
-	"extends": "../tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "..",
+		"target": "ES2018",
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"strict": true,
+		"rootDir": ".",
+		"outDir": "../out/tests",
 		"types": [
 			"node",
 			"mocha",
-			"../types/nunjucks-plugin"
+			"../types/nunjucks-plugin-api"
 		],
 		"baseUrl": "..",
-		"typeRoots": [
-			"../types",
-			"../node_modules/@types"
-		]
-	},
-	"ts-node": {
-		"files": true
+		"paths": {
+			"async-plugin-nunjucks": [
+				"./dist/esm"
+			]
+		}
 	},
 	"include": [
-		"./**/*.ts",
-		"../src/**/*.ts",
-		"../types/**/*.d.ts"
+		"./**/*.ts"
 	],
 	"exclude": [
-		"../node_modules",
-		"../dist"
+		"../node_modules"
 	]
 }

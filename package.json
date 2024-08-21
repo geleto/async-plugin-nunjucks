@@ -19,11 +19,12 @@
 	"scripts": {
 		"build": "npm run build:esm && npm run build:cjs",
 		"build:esm": "tsc --rootDir src",
-		"build:cjs": "tsc --module commonjs --rootDir src",
+		"build:cjs": "tsc --module commonjs --rootDir src --project tsconfig.cjs.json",
+		"build:tests": "tsc -p tests/tsconfig.json",
 		"prepublishOnly": "npm run build",
 		"lint": "eslint .",
-		"pretest": "npm run build:esm",
-		"test": "mocha --experimental-vm-modules --loader=ts-node/esm --project ./tests/tsconfig.json 'tests/**/*.ts'"
+		"pretest": "npm run build",
+		"test": "npm run build:tests && node --experimental-vm-modules node_modules/mocha/bin/mocha.js out/tests/**/*.js"
 	},
 	"repository": {
 		"type": "git",
