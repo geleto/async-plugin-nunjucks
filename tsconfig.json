@@ -23,13 +23,7 @@
 		"typeRoots": [
 			"./node_modules/@types",
 			"./types"
-		],
-		"paths": {
-			"*": [
-				"../node_modules/*",
-				"../types/*"
-			]
-		}
+		]
 	},
 	"include": [
 		"src/**/*.ts",

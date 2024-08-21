@@ -5,20 +5,17 @@
 		"types": [
 			"node",
 			"mocha",
-			"../types"
+			"../types/nunjucks-plugin"
 		],
 		"baseUrl": "..",
-		"paths": {
-			"*": [
-				"../node_modules/*",
-				"../src/*",
-				"../types/*"
-			]
-		}
+		"typeRoots": [
+			"../types",
+			"../node_modules/@types"
+		]
 	},
-	"files": [
-		"../types/nunjucks-plugin.d.ts",
-	],
+	"ts-node": {
+		"files": true
+	},
 	"include": [
 		"./**/*.ts",
 		"../src/**/*.ts",
