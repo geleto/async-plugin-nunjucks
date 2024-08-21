@@ -1,7 +1,7 @@
 import * as nunjucks from 'nunjucks';
 import type { nunjucksPluginApi } from 'nunjucks-plugin-api';
 
-class AddEmptyLineExtension implements nunjucks.Extension {
+export class AddEmptyLineExtension implements nunjucks.Extension {
 	tags = ['raw'];
 	private nodeTypes!: nunjucksPluginApi.NodeTypes;
 
