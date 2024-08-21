@@ -12,7 +12,7 @@ describe('Math operations', () => {
 
 import { expect } from 'chai';
 import * as nunjucks from 'nunjucks';
-import { AddEmptyLineExtension } from '../src/index'; // Adjust the import path as needed
+import { AddEmptyLineExtension } from 'async-plugin-nunjucks';
 
 describe('AddEmptyLineExtension', () => {
 	let env: nunjucks.Environment;
