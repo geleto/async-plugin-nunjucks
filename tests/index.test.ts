@@ -12,14 +12,13 @@ describe('Math operations', () => {
 
 import { expect } from 'chai';
 import * as nunjucks from 'nunjucks';
-import { AddEmptyLineExtension } from 'async-plugin-nunjucks';
+import { AsyncEnvironment } from 'async-plugin-nunjucks';
 
-describe('AddEmptyLineExtension', () => {
+describe('Async env', () => {
 	let env: nunjucks.Environment;
 
 	beforeEach(() => {
-		env = new nunjucks.Environment();
-		env.addExtension('AddEmptyLineExtension', new AddEmptyLineExtension());
+		env = new AsyncEnvironment();
 	});
 
 	it('should add an empty line at the beginning of a single-line template', () => {
