@@ -1,5 +1,4 @@
 import * as nunjucks from 'nunjucks';
-import type { nunjucksPluginApi } from 'nunjucks-plugin-api';
 
 interface TemplateCache {
 	[key: string]: nunjucks.Template;

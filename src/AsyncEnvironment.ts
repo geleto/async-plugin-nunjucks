@@ -5,6 +5,8 @@ import type { nunjucksPluginApi } from 'nunjucks-plugin-api';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Compiler } = require('nunjucks/src/compiler');//an ugly hack to get the Compiler class
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const transformer = require('nunjucks/src/transformer');//an ugly hack to get transformer.transform
 
 export class AsyncEnvironment extends nunjucks.Environment {
 	private templateCache: { [key: string]: nunjucks.Template };
@@ -55,16 +57,24 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		templateString = this.preprocess(templateString);
 
 		// Parse the template string into an AST
+		//const lexer = this.captureParserExtension.lexer;
+		//const tokens = lexer.tokenize(templateString);
+
 		const lexer = this.captureParserExtension.lexer;
-		const tokens = lexer.tokenize(templateString);
+		const tokens = lexer.lex(templateString, options);
+		//const tokens = lexer.tokenize(templateString);
 
 		// A hackish way to create a new parser instance for our tokens with the constructor from the extracted parser
 		//@todo - just import Parser from nunjucks src?
 		let parser = this.captureParserExtension.parser;
-		const parserConstructor = parser.constructor as new (tokens: nunjucksPluginApi.Token[]) => nunjucksPluginApi.Parser;
+		const parserConstructor = parser.constructor as new (tokens: nunjucksPluginApi.Tokenizer) => nunjucksPluginApi.Parser;
 		parser = new parserConstructor(tokens);
 
-		const ast = parser.parse(templateString, this.getExtensions(), options);
+		const extensions = this.getExtensions();
+		if (extensions) {
+			parser.extensions = extensions;
+		}
+		const ast = parser.parseAsRoot();//@todo - override parseAsRoot in our parser
 
 		// Modify the AST to insert an empty line at the start
 		this.astWalker.insertEmptyLineAtStart(ast);
@@ -72,7 +82,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		// Compile the modified AST into a renderable function
 		this.compile(ast, templateName, options);
 
-		const compiledTemplate = nunjucks.compile(ast, this);
+		const compiledTemplate = this.compile(ast, templateName, options);
 
 		// Cache the compiled template
 		this.templateCache[templateName] = compiledTemplate;
@@ -116,16 +126,16 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		return preprocessors.reduce((s, processor) => processor(s), src);
 	}
 
-	private compile(ast: nunjucksPluginApi.nodes.NodeList, name: string, opts: nunjucks.ConfigureOptions = {}) {
+	private compile(ast: nunjucksPluginApi.nodes.NodeList, name: string, opts: nunjucks.ConfigureOptions = {}): nunjucks.Template {
 		const c = new Compiler(name, 'throwOnUndefined' in opts ? opts.throwOnUndefined : false);
+
 		c.compile(transformer.transform(
-			parser.parse(
-				ast,
-				this.getExtensions(),
-				opts),
-			this.getAsyncFilrers(),
+			ast,
+			this.getAsyncFilters(),
+			name
 		));
-		return c.getCode();
+
+		return c.getCode() as nunjucks.Template;
 	}
 
 	// Retrieve the first loader from the environment
@@ -139,6 +149,11 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	private getExtensions(): nunjucks.Extension[] {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		return (this as any).extensions;
+	}
+
+	private getAsyncFilters(): string[] {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return (this as any).asyncFilters;
 	}
 
 	// Static method to get the default loader based on the environment

@@ -1,3 +1,5 @@
+import * as nunjucks from 'nunjucks';
+
 export declare namespace nunjucksPluginApi {
 	namespace nodes {
 		class Node {
@@ -387,8 +389,11 @@ export declare namespace nunjucksPluginApi {
 
 	class Expression extends Node { }
 
+	class Tokenizer { }
+
 	interface Lexer {
-		tokenize(src: string): Token[];
+		//tokenize(src: string): Token[];
+		lex(src: string, opts: nunjucks.ConfigureOptions): Tokenizer;
 	}
 
 	interface Token {
