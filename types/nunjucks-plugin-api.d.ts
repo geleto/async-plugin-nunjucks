@@ -1,6 +1,78 @@
 import * as nunjucks from 'nunjucks';
 
-export declare namespace nunjucksPluginApi {
+
+declare module 'nunjucks' {
+	export const parser: {
+		parser: Parser;
+		Parser: typeof Parser;
+	}
+
+	export class Parser {
+		constructor(tokens: any);
+		init(tokens: any): void;
+
+		extensions: Extension[];
+		tokens: any;
+		peeked: any;
+		breakOnBlocks: null | string[];
+		dropLeadingWhitespace: boolean;
+
+		nextToken(withWhitespace?: boolean): Token;
+		peekToken(): Token;
+		pushToken(tok: Token): void;
+		error(msg: string, lineno: number, colno: number): Error;
+		fail(msg: string, lineno?: number, colno?: number): never;
+		skip(type: string): boolean;
+		expect(type: string): Token;
+		skipValue(type: string, val: string): boolean;
+		skipSymbol(val: string): boolean;
+		advanceAfterBlockEnd(name?: string): Token;
+		advanceAfterVariableEnd(): void;
+		parseFor(): nodes.For | nodes.AsyncEach | nodes.AsyncAll;
+		parseMacro(): nodes.Macro;
+		parseCall(): nodes.Output;
+		parseWithContext(): boolean | null;
+		parseImport(): nodes.Import;
+		parseFrom(): nodes.FromImport;
+		parseBlock(): nodes.Block;
+		parseExtends(): nodes.Extends;
+		parseInclude(): nodes.Include;
+		parseIf(): nodes.If;
+		parseSet(): nodes.Set;
+		parseSwitch(): nodes.Switch;
+		parseStatement(): nodes.Node | null;
+		parseRaw(tagName?: string): nodes.Output;
+		parsePostfix(node: nodes.Node): nodes.Node;
+		parseExpression(): Expression;
+		parseInlineIf(): Expression;
+		parseOr(): Expression;
+		parseAnd(): Expression;
+		parseNot(): Expression;
+		parseIn(): Expression;
+		parseIs(): Expression;
+		parseCompare(): Expression;
+		parseConcat(): Expression;
+		parseAdd(): Expression;
+		parseSub(): Expression;
+		parseMul(): Expression;
+		parseDiv(): Expression;
+		parseFloorDiv(): Expression;
+		parseMod(): Expression;
+		parsePow(): Expression;
+		parseUnary(noFilters?: boolean): Expression;
+		parsePrimary(noPostfix?: boolean): Expression;
+		parseFilterName(): nodes.Symbol;
+		parseFilterArgs(node: Expression): nodes.NodeList;
+		parseFilter(node: Expression): Expression;
+		parseFilterStatement(): nodes.Output;
+		parseAggregate(): nodes.Node | null;
+		parseSignature(tolerant?: boolean, noParens?: boolean): nodes.NodeList | null;
+		parseUntilBlocks(...blockNames: string[]): nodes.NodeList;
+		parseNodes(): nodes.Node[];
+		parse(): nodes.NodeList;
+		parseAsRoot(): nodes.Root;
+	}
+
 	namespace nodes {
 		class Node {
 			type: string;
@@ -321,72 +393,6 @@ export declare namespace nunjucksPluginApi {
 
 	type NodeTypes = typeof nodes;
 
-	class Parser {
-		constructor(tokens: any);
-		init(tokens: any): void;
-
-		extensions: Extension[];
-		tokens: any;
-		peeked: any;
-		breakOnBlocks: null | string[];
-		dropLeadingWhitespace: boolean;
-
-		nextToken(withWhitespace?: boolean): Token;
-		peekToken(): Token;
-		pushToken(tok: Token): void;
-		error(msg: string, lineno: number, colno: number): Error;
-		fail(msg: string, lineno?: number, colno?: number): never;
-		skip(type: string): boolean;
-		expect(type: string): Token;
-		skipValue(type: string, val: string): boolean;
-		skipSymbol(val: string): boolean;
-		advanceAfterBlockEnd(name?: string): Token;
-		advanceAfterVariableEnd(): void;
-		parseFor(): nodes.For | nodes.AsyncEach | nodes.AsyncAll;
-		parseMacro(): nodes.Macro;
-		parseCall(): nodes.Output;
-		parseWithContext(): boolean | null;
-		parseImport(): nodes.Import;
-		parseFrom(): nodes.FromImport;
-		parseBlock(): nodes.Block;
-		parseExtends(): nodes.Extends;
-		parseInclude(): nodes.Include;
-		parseIf(): nodes.If;
-		parseSet(): nodes.Set;
-		parseSwitch(): nodes.Switch;
-		parseStatement(): nodes.Node | null;
-		parseRaw(tagName?: string): nodes.Output;
-		parsePostfix(node: nodes.Node): nodes.Node;
-		parseExpression(): Expression;
-		parseInlineIf(): Expression;
-		parseOr(): Expression;
-		parseAnd(): Expression;
-		parseNot(): Expression;
-		parseIn(): Expression;
-		parseIs(): Expression;
-		parseCompare(): Expression;
-		parseConcat(): Expression;
-		parseAdd(): Expression;
-		parseSub(): Expression;
-		parseMul(): Expression;
-		parseDiv(): Expression;
-		parseFloorDiv(): Expression;
-		parseMod(): Expression;
-		parsePow(): Expression;
-		parseUnary(noFilters?: boolean): Expression;
-		parsePrimary(noPostfix?: boolean): Expression;
-		parseFilterName(): nodes.Symbol;
-		parseFilterArgs(node: Expression): nodes.NodeList;
-		parseFilter(node: Expression): Expression;
-		parseFilterStatement(): nodes.Output;
-		parseAggregate(): nodes.Node | null;
-		parseSignature(tolerant?: boolean, noParens?: boolean): nodes.NodeList | null;
-		parseUntilBlocks(...blockNames: string[]): nodes.NodeList;
-		parseNodes(): nodes.Node[];
-		parse(): nodes.NodeList;
-		parseAsRoot(): nodes.Root;
-	}
-
 	class Expression extends Node { }
 
 	class Tokenizer { }
@@ -402,15 +408,6 @@ export declare namespace nunjucksPluginApi {
 		lineno: number;
 		colno: number;
 	}
-
-	interface Extension {
-		tags?: string[];
-		parse(parser: Parser, nodes: NodeTypes, lexer: Lexer): nodes.Node;
-	}
-
 }
 
-declare const nodes: nunjucksPluginApi.NodeTypes;
-
-//export = nunjucksPluginApi.nodes;
-//export as namespace nunjucksApi.nodes;
+declare const nodes: nunjucks.NodeTypes;
