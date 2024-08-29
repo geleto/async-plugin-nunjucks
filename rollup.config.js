@@ -1,6 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
+import typescript from 'rollup-plugin-typescript2';
 import dts from 'rollup-plugin-dts';
 
 const config = [
@@ -25,18 +25,17 @@ const config = [
 			commonjs(),
 			typescript({
 				tsconfig: './tsconfig.json',
-				include: ['src/**/*.ts', 'types/**/*.d.ts'],
+				sourceMap: true,
+				inlineSources: true,
 				compilerOptions: {
-					module: 'ESNext',
-					target: 'ES2018',
-					useDefineForClassFields: false,
-				},
+					declaration: false,
+				}
 			}),
 		],
-		external: ['fs', 'path', 'nunjucks'],
+		external: ['nunjucks'],
 	},
 	{
-		input: 'dist/esm/index.d.ts',
+		input: 'src/index.ts',
 		output: [{ file: 'dist/index.d.ts', format: 'es' }],
 		plugins: [dts()],
 	},

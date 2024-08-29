@@ -13,15 +13,22 @@
 		"rootDir": "./src",
 		"strict": true,
 		"moduleResolution": "node",
-		"baseUrl": "./src",
+		"baseUrl": ".",
+		"paths": {
+			"*": [
+				"types/*"
+			]
+		},
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"useDefineForClassFields": false
 	},
 	"include": [
-		"src/**/*"
+		"src/**/*",
+		"types/**/*.d.ts"
 	],
 	"exclude": [
 		"node_modules",
