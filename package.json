@@ -17,8 +17,8 @@
 	],
 	"scripts": {
 		"build": "npm run build:esm && npm run build:cjs && npm run build:types",
-		"build:esm": "esbuild src/index.ts --bundle --outfile=dist/esm/index.js --platform=node --format=esm --sourcemap --external:events --external:fs --external:path",
-		"build:cjs": "esbuild src/index.ts --bundle --outfile=dist/cjs/index.js --platform=node --format=cjs --sourcemap --external:events --external:fs --external:path",
+		"build:esm": "rollup -c rollup.config.js",
+		"build:cjs": "rollup -c rollup.config.js --environment FORMAT:cjs",
 		"build:types": "tsc --emitDeclarationOnly --outDir dist/esm",
 		"build:tests": "tsc -p tests/tsconfig.json",
 		"prepublishOnly": "npm run build",
@@ -46,6 +46,9 @@
 	},
 	"homepage": "https://github.com/geleto/async-plugin-nunjucks#readme",
 	"devDependencies": {
+		"@rollup/plugin-commonjs": "^26.0.1",
+		"@rollup/plugin-node-resolve": "^15.2.3",
+		"@rollup/plugin-typescript": "^11.1.6",
 		"@types/chai": "^4.3.17",
 		"@types/mocha": "^10.0.7",
 		"@types/node": "^22.4.1",
@@ -53,13 +56,14 @@
 		"@typescript-eslint/eslint-plugin": "^8.1.0",
 		"@typescript-eslint/parser": "^8.1.0",
 		"chai": "^5.1.1",
-		"esbuild": "^0.23.1",
 		"eslint": "^9.9.0",
-		"esm": "^3.2.25",
 		"globals": "^15.9.0",
 		"mocha": "^10.7.3",
+		"rollup": "^4.21.1",
+		"rollup-plugin-dts": "^6.1.1",
 		"source-map-support": "^0.5.21",
 		"ts-node": "^10.9.2",
+		"tslib": "^2.7.0",
 		"typescript": "^5.5.4"
 	},
 	"peerDependencies": {

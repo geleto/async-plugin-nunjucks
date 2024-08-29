@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "ES2018",
+		"target": "es2022",
 		"module": "ESNext",
 		"moduleResolution": "node",
 		"esModuleInterop": true,
@@ -15,7 +15,7 @@
 		"baseUrl": "..",
 		"paths": {
 			"async-plugin-nunjucks": [
-				"./dist/esm"
+				"./dist/esm/index.d.ts"
 			]
 		}
 	},

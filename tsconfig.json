@@ -1,40 +1,30 @@
 {
 	"compilerOptions": {
-		"module": "ESNext",
-		"target": "ES2018",
+		"target": "es2018",
+		"module": "esnext",
 		"lib": [
-			"ESNext",
-			"DOM"
+			"es2018",
+			"dom"
 		],
-		"outDir": "dist/esm",
-		"rootDir": "src",
-		"sourceMap": true,
-		"strict": true,
-		"strictNullChecks": true,
-		"moduleResolution": "node",
-		"resolveJsonModule": true,
-		"esModuleInterop": true,
 		"declaration": true,
 		"declarationMap": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noImplicitReturns": true,
-		"baseUrl": "src",
-		"typeRoots": [
-			"./node_modules/@types",
-			"./types"
-		]
+		"sourceMap": true,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"strict": true,
+		"moduleResolution": "node",
+		"baseUrl": "./src",
+		"esModuleInterop": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true
 	},
 	"include": [
-		"src/**/*.ts",
-		"types/**/*.d.ts"
+		"src/**/*"
 	],
 	"exclude": [
 		"node_modules",
 		"dist"
-	],
-	"ts-node": {
-		"esm": true,
-		"experimentalSpecifierResolution": "node"
-	}
+	]
 }
