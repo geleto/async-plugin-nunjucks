@@ -20,12 +20,12 @@
 		"build:esm": "rollup -c rollup.config.js",
 		"build:cjs": "rollup -c rollup.config.js --environment FORMAT:cjs",
 		"build:types": "tsc --emitDeclarationOnly --outDir dist/esm",
-		"build:tests": "tsc -p tests/tsconfig.json",
+		"build:tests": "rollup -c rollup.config.tests.js",
 		"prepublishOnly": "npm run build",
 		"lint": "eslint .",
-		"pretest": "npm run build",
-		"test": "npm run build:tests && node --experimental-vm-modules node_modules/mocha/bin/mocha.js out/tests/**/*.js",
-		"test:cjs": "npm run build:tests && node --require=source-map-support/register node_modules/mocha/bin/mocha.js --require dist/cjs/index.js out/tests/**/*.js"
+		"pretest": "npm run build && npm run build:tests",
+		"test": "node --experimental-vm-modules node_modules/mocha/bin/mocha.js out/tests/**/*.js",
+		"test:cjs": "node --require=source-map-support/register node_modules/mocha/bin/mocha.js --require dist/cjs/index.js out/tests/**/*.js"
 	},
 	"repository": {
 		"type": "git",
