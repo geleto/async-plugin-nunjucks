@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
+import json from '@rollup/plugin-json';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -15,8 +16,9 @@ export default {
 		sourcemap: true,
 	},
 	plugins: [
+		json(),
 		resolve({
-			extensions: ['.ts', '.js', '.mjs'],
+			extensions: ['.ts', '.js', '.mjs', '.json'],
 			modulePaths: [path.resolve(__dirname, 'dist/esm')]
 		}),
 		commonjs({
