@@ -2,30 +2,20 @@
 	"name": "async-plugin-nunjucks",
 	"version": "0.9.0",
 	"description": "Async context properties for the nunjucks template engine",
-	"type": "module",
-	"exports": {
-		".": {
-			"import": "./dist/esm/index.js",
-			"require": "./dist/cjs/index.js"
-		}
-	},
-	"main": "./dist/cjs/index.js",
-	"module": "./dist/esm/index.js",
-	"types": "./dist/esm/index.d.ts",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"files": [
-		"dist/"
+		"dist/",
+		"types/"
 	],
 	"scripts": {
-		"build": "npm run build:esm && npm run build:cjs && npm run build:types",
-		"build:esm": "rollup -c rollup.config.js",
-		"build:cjs": "rollup -c rollup.config.js --environment FORMAT:cjs",
-		"build:types": "tsc --emitDeclarationOnly --outDir dist/esm",
-		"build:tests": "rollup -c rollup.config.tests.js",
+		"build": "tsc",
 		"prepublishOnly": "npm run build",
 		"lint": "eslint .",
-		"pretest": "npm run build && npm run build:tests",
-		"test": "node --experimental-vm-modules node_modules/mocha/bin/mocha.js out/tests/**/*.js",
-		"test:cjs": "node --require=source-map-support/register node_modules/mocha/bin/mocha.js --require dist/cjs/index.js out/tests/**/*.js"
+		"pretest": "npm run build",
+		"test": "mocha",
+		"test2": "npm run build && ts-mocha -p ./tests/tsconfig.json tests/**/*.ts",
+		"conf": "ts-mocha -p ./tests/tsconfig.json --show_config"
 	},
 	"repository": {
 		"type": "git",
@@ -63,7 +53,9 @@
 		"rollup-plugin-dts": "^6.1.1",
 		"rollup-plugin-typescript2": "^0.36.0",
 		"source-map-support": "^0.5.21",
+		"ts-mocha": "^10.0.0",
 		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
 		"tslib": "^2.7.0",
 		"typescript": "^5.5.4"
 	},

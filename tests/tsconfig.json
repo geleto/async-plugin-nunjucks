@@ -1,28 +1,20 @@
 {
 	"compilerOptions": {
 		"target": "es2022",
-		"module": "ESNext",
+		"module": "commonjs",
+		"strict": true,
 		"moduleResolution": "node",
 		"esModuleInterop": true,
-		"strict": true,
-		"rootDir": "..",
-		"outDir": "../out/tests",
-		"types": [
-			"node",
-			"mocha",
-			"../types/nunjucks-plugin-api"
-		],
 		"baseUrl": "..",
 		"paths": {
 			"async-plugin-nunjucks": [
-				"dist/esm/index"
+				"./dist/index"
 			]
 		}
 	},
 	"include": [
-		"./**/*.ts"
-	],
-	"exclude": [
-		"../node_modules"
+		"./**/*.ts",
+		"../dist/**/*.d.ts",
+		"../types/**/*.d.ts"
 	]
 }
