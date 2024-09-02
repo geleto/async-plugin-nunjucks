@@ -4,26 +4,35 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Debug Mocha Tests",
-			"program": "${workspaceFolder}/node_modules/mocha/bin/mocha.js",
+			"name": "Debug Tests",
+			"program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
 			"args": [
-				"out/tests/**/*.js"
+				"-r",
+				"ts-node/register",
+				"-r",
+				"source-map-support/register",
+				"--timeout",
+				"5000",
+				"--colors",
+				"${workspaceFolder}/tests/**/*.ts"
 			],
-			"runtimeArgs": [
-				"--experimental-vm-modules"
-			],
-			"env": {
-				"NODE_ENV": "test",
-				"TS_NODE_PROJECT": "${workspaceFolder}/tests/tsconfig.json"
-			},
 			"cwd": "${workspaceFolder}",
 			"internalConsoleOptions": "openOnSessionStart",
-			"console": "integratedTerminal",
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
+			"skipFiles": [
+				"<node_internals>/**"
 			],
-			"preLaunchTask": "npm: build"
+			"env": {
+				"TS_NODE_PROJECT": "${workspaceFolder}/tests/tsconfig.json"
+			},
+			"outFiles": [
+				"${workspaceFolder}/dist/**/*.js"
+			],
+			"sourceMaps": true,
+			"resolveSourceMapLocations": [
+				"${workspaceFolder}/**",
+				"!**/node_modules/**"
+			],
+			"smartStep": true
 		}
 	]
 }

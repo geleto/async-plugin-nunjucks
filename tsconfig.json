@@ -15,7 +15,10 @@
 			"mocha",
 			"chai",
 			"node"
-		]
+		],
+		"sourceMap": true,
+		"inlineSourceMap": false,
+		"inlineSources": false
 	},
 	"include": [
 		"src/**/*.ts",

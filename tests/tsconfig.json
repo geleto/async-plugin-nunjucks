@@ -19,7 +19,8 @@
 			"mocha",
 			"chai",
 			"node"
-		]
+		],
+		"sourceMap": true
 	},
 	"include": [
 		"./**/*.ts"
