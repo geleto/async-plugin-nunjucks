@@ -2,19 +2,26 @@
 	"compilerOptions": {
 		"target": "es2022",
 		"module": "commonjs",
-		"strict": true,
 		"moduleResolution": "node",
 		"esModuleInterop": true,
-		"baseUrl": "..",
+		"allowSyntheticDefaultImports": true,
+		"lib": [
+			"es2022"
+		],
+		"rootDir": ".",
+		"strict": true,
 		"paths": {
-			"async-plugin-nunjucks": [
-				"./dist/index"
+			"*": [
+				"./types/*"
 			]
-		}
+		},
+		"types": [
+			"mocha",
+			"chai",
+			"node"
+		]
 	},
 	"include": [
-		"./**/*.ts",
-		"../dist/**/*.d.ts",
-		"../types/**/*.d.ts"
+		"./**/*.ts"
 	]
 }

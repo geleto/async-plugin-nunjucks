@@ -12,10 +12,13 @@ describe('Math operations', () => {
 
 import { expect } from 'chai';
 import * as nunjucks from 'nunjucks';
-import { AsyncEnvironment } from 'async-plugin-nunjucks';
+//import { AsyncEnvironment } from 'async-plugin-nunjucks';
+import { AsyncEnvironment } from '../dist/index';
 
-const parser = new nunjucks.Parser(1);
-console.log(parser);
+
+
+//const parser = new nunjucks.Parser(1);
+//console.log(parser);
 
 describe('Async env', () => {
 	let env: nunjucks.Environment;
