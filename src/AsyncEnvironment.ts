@@ -12,8 +12,8 @@ export class AsyncEnvironment extends nunjucks.Environment {
 
 		if (!AsyncEnvironment.initializedParseAsRoot) {
 			AsyncEnvironment.initializedParseAsRoot = true;
-			const originalParseAsRoot = nunjucks.Parser.prototype.parseAsRoot;
-			nunjucks.Parser.prototype.parseAsRoot = function (): nunjucks.nodes.Root {
+			const originalParseAsRoot = nunjucks.parser.Parser.prototype.parseAsRoot;
+			nunjucks.parser.Parser.prototype.parseAsRoot = function (): nunjucks.nodes.Root {
 				const ast = originalParseAsRoot.call(this);
 				//check if the environment has the async extension and only then process the AST
 				const extensions = this.extensions as nunjucks.Extension[];
