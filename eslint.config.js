@@ -41,6 +41,8 @@ export default [
 			'@typescript-eslint/strict-boolean-expressions': 'off',
 			'@typescript-eslint/restrict-template-expressions': 'off',
 			'@typescript-eslint/no-non-null-assertion': 'off',
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
 			'no-undef': 'off', // TypeScript handles this
 		},
 	},
