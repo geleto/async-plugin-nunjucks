@@ -107,3 +107,52 @@ export class AsyncDebounce<T> {
 		return await this.pendingPromise;
 	}
 }
+
+/**
+ * Custom assertion function that works both in Node.js and browsers
+ * @param condition - The condition to assert
+ * @param message - Optional error message
+ */
+export function assert(condition: boolean, message?: string): asserts condition {
+	if (!condition) {
+		throw new AssertionError(message ?? "Assertion failed");
+	}
+}
+
+/**
+ * Custom error class for assertions
+ */
+class AssertionError extends Error {
+	constructor(message?: string) {
+		super(message);
+		this.name = 'AssertionError';
+
+		// Maintains proper stack trace for where our error was thrown (only available on V8)
+		if (Error.captureStackTrace) {
+			Error.captureStackTrace(this, AssertionError);
+		}
+	}
+}
+
+/**
+ * Asserts that two values are strictly equal
+ */
+assert.equal = (actual: unknown, expected: unknown, message?: string): void => {
+	assert(actual === expected, message ?? `Expected ${expected} but got ${actual}`);
+};
+
+/**
+ * Asserts that two values are not strictly equal
+ */
+assert.notEqual = (actual: unknown, expected: unknown, message?: string): void => {
+	assert(actual !== expected, message ?? `Expected value to not equal ${expected}`);
+};
+
+/**
+ * Asserts that a value is truthy
+ */
+assert.ok = (value: unknown, message?: string): void => {
+	assert(!!value, message ?? `Expected value to be truthy`);
+};
+
+// You can add more assertion methods here as needed
