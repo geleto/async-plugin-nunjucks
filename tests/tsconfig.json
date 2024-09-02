@@ -17,8 +17,7 @@
 		},
 		"types": [
 			"mocha",
-			"chai",
-			"node"
+			"chai"
 		],
 		"sourceMap": true
 	},

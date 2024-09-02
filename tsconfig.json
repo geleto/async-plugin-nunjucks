@@ -6,15 +6,15 @@
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"lib": [
-			"es2022"
+			"es2022",
+			"dom"
 		],
 		"outDir": "./dist",
 		"strict": true,
 		"skipLibCheck": true,
 		"types": [
 			"mocha",
-			"chai",
-			"node"
+			"chai"
 		],
 		"sourceMap": true,
 		"inlineSourceMap": false,
