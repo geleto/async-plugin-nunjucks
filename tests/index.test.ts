@@ -14,6 +14,16 @@ describe('Async env', () => {
 		const result = env.renderString(template, { name: 'World' });
 		expect(result).to.equal('\nHello, World!');
 	});
+});
+
+
+describe('Regular env', () => {
+
+	let env: nunjucks.Environment;
+
+	beforeEach(() => {
+		env = new nunjucks.Environment();
+	});
 
 	it('should handle custom async filter with global async function', (done) => {
 		// Implement custom async filter
@@ -36,7 +46,7 @@ describe('Async env', () => {
 
 		env.renderString(template, {}, (err, result) => {
 			if (err) return done(err);
-			expect(result).to.equal('\nHello, User 123!');
+			expect(result).to.equal('Hello, User 123!');
 			done();
 		});
 	});
