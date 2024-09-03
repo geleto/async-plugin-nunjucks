@@ -2,12 +2,51 @@ import * as nunjucks from 'nunjucks';
 
 
 declare module 'nunjucks' {
-	export const parser: {
+	const parser: {
 		parser: Parser;
 		Parser: typeof Parser;
 	}
 
-	export class Parser {
+	const compiler: {
+		compiler: Compiler;
+		Compiler: typeof Compiler;
+	}
+
+	namespace runtime {
+		class Frame {
+			lookup(name: string): any;
+			set(name: string, val: any, implicit?: boolean): void;
+			push(isolated?: boolean): Frame;
+			pop(): Frame;
+			setSpec(name: string, spec: any): void;
+			setVariable(name: string, val: any): void;
+			getAll(): { [key: string]: any };
+			getSpecAll(): { [key: string]: any };
+			getScope(): { [key: string]: any };
+			addExport(name: string): void;
+			getExports(): string[];
+			parent: runtime.Frame | null;
+		}
+		function makeMacro(argNames: string[], kwargNames: string[], func: Function): Function;
+		function makeKeywordArgs(obj: object): object;
+		function numArgs(args: any[]): number;
+		function suppressValue(val: any, autoescape: boolean): any;
+		function ensureDefined(val: any, lineno: number, colno: number): any;
+		function memberLookup(obj: any, val: string): any;
+		function contextOrFrameLookup(context: object, frame: Frame, name: string): any;
+		function callWrap(obj: any, name: string, context: any, args: any[]): any;
+		function handleError(error: Error, lineno: number, colno: number): Error;
+		function isArray(obj: any): boolean;
+		function keys(obj: object): string[];
+		function copySafeness(dest: any, target: any): any;
+		function markSafe(val: any): any;
+		function asyncEach(arr: any[], dimen: number, iter: Function, cb: AsyncCallback<void>): void;
+		function asyncAll(arr: any[], dimen: number, func: Function, cb: AsyncCallback<string>): void;
+		function inOperator(left: any, right: any): boolean;
+		function fromIterator(arr: any): any[];
+	}
+
+	class Parser {
 		constructor(tokens: any);
 		init(tokens: any): void;
 
@@ -71,6 +110,95 @@ declare module 'nunjucks' {
 		parseNodes(): nodes.Node[];
 		parse(): nodes.NodeList;
 		parseAsRoot(): nodes.Root;
+	}
+
+	class Compiler {
+		constructor(templateName: string | null, throwOnUndefined: boolean);
+		templateName: string | null;
+		codebuf: string[];
+		lastId: number;
+		buffer: string | null;
+		bufferStack: string[];
+		inBlock: boolean;
+		throwOnUndefined: boolean;
+
+		fail(msg: string, lineno?: number, colno?: number): never;
+		compileCallExtension(node: nodes.Node, frame: runtime.Frame, async: boolean): void;
+		compileCallExtensionAsync(node: nodes.Node, frame: runtime.Frame): void;
+		compileNodeList(node: nodes.Node, frame: runtime.Frame): void;
+		compileLiteral(node: nodes.Literal): void;
+		compileSymbol(node: nodes.Symbol, frame: runtime.Frame): void;
+		compileGroup(node: nodes.Group, frame: runtime.Frame): void;
+		compileArray(node: nodes.Array, frame: runtime.Frame): void;
+		compileDict(node: nodes.Dict, frame: runtime.Frame): void;
+		compilePair(node: nodes.Pair, frame: runtime.Frame): void;
+		compileInlineIf(node: nodes.If, frame: runtime.Frame): void;
+		compileIn(node: nodes.Node, frame: runtime.Frame): void;
+		compileIs(node: nodes.Node, frame: runtime.Frame): void;
+		compileOr(node: nodes.Node, frame: runtime.Frame): void;
+		compileAnd(node: nodes.Node, frame: runtime.Frame): void;
+		compileAdd(node: nodes.Node, frame: runtime.Frame): void;
+		compileConcat(node: nodes.Node, frame: runtime.Frame): void;
+		compileSub(node: nodes.Node, frame: runtime.Frame): void;
+		compileMul(node: nodes.Node, frame: runtime.Frame): void;
+		compileDiv(node: nodes.Node, frame: runtime.Frame): void;
+		compileMod(node: nodes.Node, frame: runtime.Frame): void;
+		compileNot(node: nodes.Node, frame: runtime.Frame): void;
+		compileFloorDiv(node: nodes.Node, frame: runtime.Frame): void;
+		compilePow(node: nodes.Node, frame: runtime.Frame): void;
+		compileNeg(node: nodes.Node, frame: runtime.Frame): void;
+		compilePos(node: nodes.Node, frame: runtime.Frame): void;
+		compileCompare(node: nodes.Node, frame: runtime.Frame): void;
+		compileLookupVal(node: nodes.LookupVal, frame: runtime.Frame): void;
+		compileFunCall(node: nodes.FunCall, frame: runtime.Frame): void;
+		compileFilter(node: nodes.Node, frame: runtime.Frame): void;
+		compileFilterAsync(node: nodes.Node, frame: runtime.Frame): void;
+		compileKeywordArgs(node: nodes.Dict, frame: runtime.Frame): void;
+		compileSet(node: nodes.Node, frame: runtime.Frame): void;
+		compileSwitch(node: nodes.Node, frame: runtime.Frame): void;
+		compileIf(node: nodes.If, frame: runtime.Frame, async: boolean): void;
+		compileIfAsync(node: nodes.If, frame: runtime.Frame): void;
+		compileFor(node: nodes.For, frame: runtime.Frame): void;
+		compileAsyncEach(node: nodes.For, frame: runtime.Frame): void;
+		compileAsyncAll(node: nodes.For, frame: runtime.Frame): void;
+		compileMacro(node: nodes.Macro, frame: runtime.Frame): void;
+		compileCaller(node: nodes.Node, frame: runtime.Frame): void;
+		compileImport(node: nodes.Import, frame: runtime.Frame): void;
+		compileFromImport(node: nodes.FromImport, frame: runtime.Frame): void;
+		compileBlock(node: nodes.Block): void;
+		compileSuper(node: nodes.Node, frame: runtime.Frame): void;
+		compileExtends(node: nodes.Node, frame: runtime.Frame): void;
+		compileInclude(node: nodes.Node, frame: runtime.Frame): void;
+		compileTemplateData(node: nodes.Literal, frame: runtime.Frame): void;
+		compileCapture(node: nodes.Node, frame: runtime.Frame): void;
+		compileOutput(node: nodes.Output, frame: runtime.Frame): void;
+		compileRoot(node: nodes.Root, frame: runtime.Frame | null): void;
+		compile(node: nodes.Node, frame: runtime.Frame): void;
+		getCode(): string;
+
+		_pushBuffer(): string;
+		_popBuffer(): void;
+		_emit(code: string): void;
+		_emitLine(code: string): void;
+		_emitLines(...lines: string[]): void;
+		_emitFuncBegin(node: nodes.Node, name: string): void;
+		_emitFuncEnd(noReturn?: boolean): void;
+		_addScopeLevel(): void;
+		_closeScopeLevels(): void;
+		_withScopedSyntax(func: () => void): void;
+		_makeCallback(res?: string): string;
+		_tmpid(): string;
+		_templateName(): string;
+		_compileChildren(node: nodes.Node, frame: runtime.Frame): void;
+		_compileAggregate(node: nodes.Node, frame: runtime.Frame, startChar?: string, endChar?: string): void;
+		_compileExpression(node: nodes.Node, frame: runtime.Frame): void;
+		_compileGetTemplate(node: nodes.Node, frame: runtime.Frame, eagerCompile: boolean, ignoreMissing: boolean): string;
+		_compileMacro(node: nodes.Node, frame?: Frame): string;
+		_compileAsyncLoop(node: nodes.Node, frame: runtime.Frame, parallel?: boolean): void;
+		_compileMacro(node: nodes.Node, frame?: Frame): string;
+		_getNodeName(node: nodes.Node): string;
+		_binOpEmitter(node: nodes.Node, frame: runtime.Frame, str: string): void;
+		_emitLoopBindings(node: nodes.Node, arr: string, i: string, len: string): void;
 	}
 
 	namespace nodes {
