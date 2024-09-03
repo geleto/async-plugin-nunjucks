@@ -23,7 +23,6 @@ export class AsyncEnvironment extends nunjucks.Environment {
 						return ast;
 					}
 				}
-				AsyncEnvironment.astWalker.insertEmptyLineAtStart(ast);
 				return ast;
 			};
 		}
