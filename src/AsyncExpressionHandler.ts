@@ -6,7 +6,7 @@ type AsyncCompiledExpression = (env: nunjucks.Environment, context: object, fram
 /**
  * Use a differnet compiler for each template
  */
-export class ExpressionCompiler extends compiler.Compiler {
+export class AsyncExpressionHandler extends compiler.Compiler {
 	private runningExpressions: Promise<any>[] = [];
 
 	constructor(name: string, throwOnUndefined: boolean) {
