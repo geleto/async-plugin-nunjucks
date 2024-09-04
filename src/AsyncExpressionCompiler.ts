@@ -2,6 +2,7 @@ import * as nunjucks from 'nunjucks';
 import { compiler, runtime, nodes } from 'nunjucks';
 
 type AsyncCompiledExpression = (env: nunjucks.Environment, context: object, frame: runtime.Frame, rnt: typeof runtime) => Promise<any>;
+type CompiledExpression = (env: nunjucks.Environment, context: object, frame: runtime.Frame, rnt: typeof runtime) => any;
 
 /**
  * Use a differnet compiler for each template
@@ -13,7 +14,7 @@ export class AsyncExpressionCompiler extends compiler.Compiler {
 		super(name, throwOnUndefined);
 	}
 
-	compileExpression(node: nodes.Node, frame = new runtime.Frame()) {
+	compileAsyncExpression(node: nodes.Node, frame = new runtime.Frame()) {
 		this.codebuf = [];
 		this.buffer = 'expressionResult';
 
@@ -30,11 +31,28 @@ export class AsyncExpressionCompiler extends compiler.Compiler {
 		) as AsyncCompiledExpression;
 	}
 
-	evaluate(compiledFunc: AsyncCompiledExpression, env: nunjucks.Environment, context: object, frame: runtime.Frame, rnt: typeof runtime) {
+	compileExpression(node: nodes.Node, frame = new runtime.Frame()) {
+		this.codebuf = [];
+		this.buffer = 'expressionResult';
+
+		this._emit('var expressionResult = ');
+		this._compileExpression(node, frame);
+		this._emit(';');
+
+		const code = this.getCode();
+		return new Function('context', 'env', 'runtime', code + '; return expressionResult;') as CompiledExpression;
+	}
+
+	evaluateAsync(compiledFunc: AsyncCompiledExpression, env: nunjucks.Environment, context: object, frame: runtime.Frame, rnt: typeof runtime) {
 		const expressionPromise = compiledFunc(env, context, frame, rnt);
 		this.runningExpressions.push(expressionPromise);
 		return expressionPromise;
 	}
+
+	evaluate(compiledFunc: CompiledExpression, env: nunjucks.Environment, context: object, frame: runtime.Frame, rnt: typeof runtime): any {
+		return compiledFunc(env, context, frame, rnt);
+	}
+
 
 	async waitAllExpressions(): Promise<void> {
 		await Promise.all(this.runningExpressions);
