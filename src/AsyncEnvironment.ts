@@ -1,11 +1,20 @@
 import * as nunjucks from 'nunjucks';
-import { AsyncExtension } from './AsyncExtension';
 import { ASTWalker } from './ASTWalker';
+
+//A dummy extension, only async environments have it, used to identify them
+export class AsyncExtension implements nunjucks.Extension {
+	tags: string[] = [];
+	parse() {
+
+	}
+}
+
 
 export class AsyncEnvironment extends nunjucks.Environment {
 	private static asyncExtension = new AsyncExtension();
 	private static astWalker = new ASTWalker();
 	static patchedMethods = false;
+	resolvedContext: any = {};//a hack to store the resolved context
 
 	constructor(loader?: nunjucks.ILoaderAny | nunjucks.ILoaderAny[], opts?: nunjucks.ConfigureOptions) {
 		super(loader, opts);
@@ -38,9 +47,9 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	}
 
 
-
 	// Asynchronously render a template from a file with AST modification and caching
 	async renderAsync(templateName: string, context: object): Promise<string> {
+		this.resolvedContext = {};
 		//use promise to render
 		return new Promise((resolve, reject) => {
 			this.render(templateName, context, (err, res) => {
@@ -55,6 +64,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	}
 
 	async renderStringAsync(templateString: string, context: object): Promise<string> {
+		this.resolvedContext = {};
 		return new Promise((resolve, reject) => {
 			this.renderString(templateString, context, (err, res) => {
 				if (err || res === null) {
