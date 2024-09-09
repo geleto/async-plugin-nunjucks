@@ -14,6 +14,7 @@ declare module 'nunjucks' {
 
 	namespace runtime {
 		class Frame {
+			constructor(parent?: Frame, isolateWrites?: boolean);
 			lookup(name: string): any;
 			set(name: string, val: any, implicit?: boolean): void;
 			push(isolated?: boolean): Frame;
@@ -32,7 +33,7 @@ declare module 'nunjucks' {
 		function numArgs(args: any[]): number;
 		function suppressValue(val: any, autoescape: boolean): any;
 		function ensureDefined(val: any, lineno: number, colno: number): any;
-		function memberLookup(obj: any, val: string): any;
+		function memberLookup(obj: any, val: string | number): any;
 		function contextOrFrameLookup(context: object, frame: Frame, name: string): any;
 		function callWrap(obj: any, name: string, context: any, args: any[]): any;
 		function handleError(error: Error, lineno: number, colno: number): Error;
@@ -44,6 +45,25 @@ declare module 'nunjucks' {
 		function asyncAll(arr: any[], dimen: number, func: Function, cb: AsyncCallback<string>): void;
 		function inOperator(left: any, right: any): boolean;
 		function fromIterator(arr: any): any[];
+	}
+
+	class Context {
+		//constructor(ctx: object, blocks: object, env: Environment);
+
+		env: Environment;
+		ctx: Record<string, any>;
+		blocks: { [key: string]: Function[] };
+		exported: string[];
+
+		init(ctx: object, blocks: object, env: Environment): void;
+		lookup(name: string): any;
+		setVariable(name: string, val: any): void;
+		getVariables(): object;
+		addBlock(name: string, block: Function): this;
+		getBlock(name: string): Function;
+		getSuper(env: Environment, name: string, block: Function, frame: any, runtime: any, cb: Function): void;
+		addExport(name: string): void;
+		getExported(): object;
 	}
 
 	class Parser {
