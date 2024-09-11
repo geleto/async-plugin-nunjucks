@@ -14,67 +14,26 @@ type NestedStringArray = (string | NestedStringArray)[];
 export class AsyncEnvironment extends nunjucks.Environment {
 	private static asyncExtension = new AsyncExtension();
 	private static astWalker = new ASTWalker();
-	static patchedMethods = false;
-	resolvedContext: any = {};//a hack to store the resolved context
+	static monkeyPatched = false;
 
 	constructor(loader?: nunjucks.ILoaderAny | nunjucks.ILoaderAny[], opts?: nunjucks.ConfigureOptions) {
 		super(loader, opts);
 
-		if (!AsyncEnvironment.patchedMethods) {
-			AsyncEnvironment.patchedMethods = true;
-
-			console.log('Patching methods');
-			this.patchMethods();
-		}
 		this.addExtension('AsyncExtension', AsyncEnvironment.asyncExtension);
 	}
 
-	patchMethods() {
-		//patch parseAsRoot to get the AST for processing
-		const originalParseAsRoot = nunjucks.parser.Parser.prototype.parseAsRoot;
-		nunjucks.parser.Parser.prototype.parseAsRoot = function (): nunjucks.nodes.Root {
-			const ast = originalParseAsRoot.call(this);
-			//check if the environment has the async extension and only then process the AST
-			if ((this.extensions as nunjucks.Extension[]).includes(AsyncEnvironment.asyncExtension)) {
-				AsyncEnvironment.astWalker.insertEmptyLineAtStart(ast);
-			}
-			return ast;
-		};
-
-		//const unpatch = this.monkeyPatchClass(nunjucks, 'Compiler', AsyncResolveCompiler);
-
-		console.log('Patching compiler');
-		this.monkeyPatchOverrides(AsyncCompiler, nunjucks.compiler.Compiler.prototype);
-
-		/*nunjucks.compiler.compile = function (src: string, asyncFilters: string[], extensions: nunjucks.Extension[], name: string, opts: Record<string, any> = {}): nunjucks.Template {
-			var c;
-			if (extensions.includes(AsyncEnvironment.asyncExtension)) {
-				c = new AsyncResolveCompiler(name, opts.throwOnUndefined);
-			}
-			else {
-				c = new nunjucks.compiler.Compiler(name, opts.throwOnUndefined);
-			}
-			// Run the extension preprocessors against the source.
-			const preprocessors = (extensions || []).map(ext => ext.preprocess).filter(f => !!f);
-
-			const processedSrc = preprocessors.reduce((s, processor) => processor(s), src);
-
-			c.compile(transformer.transform(
-				nunjucks.parser.parse(processedSrc, extensions, opts),
-				asyncFilters,
-				name
-			));
-			return c.getCode();
-		}*/
-	}
-
-
 	// Asynchronously render a template from a file with AST modification and caching
 	async renderAsync(templateName: string, context: object): Promise<string> {
-		this.resolvedContext = {};
-		//use promise to render
+		let undoPatch: () => void;
+		if (!AsyncEnvironment.monkeyPatched) {
+			AsyncEnvironment.monkeyPatched = true;
+			undoPatch = this.monkeyPatch();
+		}
 		return new Promise((resolve, reject) => {
 			this.render(templateName, context, (err, res) => {
+				if (undoPatch) {
+					undoPatch();
+				}
 				//the returned value in res is actually a NestedStringArray
 				if (err || res === null) {
 					reject(err ?? new Error('No render result'));
@@ -88,16 +47,21 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	}
 
 	async renderStringAsync(templateString: string, context: object): Promise<string> {
-		this.resolvedContext = {};
+		let undoPatch: () => void;
+		if (!AsyncEnvironment.monkeyPatched) {
+			AsyncEnvironment.monkeyPatched = true;
+			undoPatch = this.monkeyPatch();
+		}
 		return new Promise((resolve, reject) => {
 			this.renderString(templateString, context, (err, res) => {
+				if (undoPatch) {
+					undoPatch();
+				}
 				if (err || res === null) {
 					reject(err ?? new Error('No render result'));
 				}
 				else {
-					//resolve(res);
 					resolve(this.flattenNestedArray(res as unknown as NestedStringArray));
-
 				}
 			});
 		});
@@ -110,18 +74,58 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		return results;
 	}
 
-	private monkeyPatchOverrides(sourceClass: any, targetPrototype: any) {
+	private monkeyPatch() {
+		console.log('Patching');
+		const unpatchParseAsRoot = this.monkeyPatchParseAsRoot();
+		const unpatchClass = this.monkeyPatchCompilerClass(AsyncCompiler, nunjucks.compiler.Compiler.prototype);
+		return () => {
+			unpatchParseAsRoot();
+			unpatchClass();
+			console.log('Unpatched');
+		};
+	}
+
+	private monkeyPatchParseAsRoot() {
+		// Store the original parseAsRoot function
+		const originalParseAsRoot = nunjucks.parser.Parser.prototype.parseAsRoot;
+
+		// Patch parseAsRoot to get the AST for processing
+		nunjucks.parser.Parser.prototype.parseAsRoot = function (): nunjucks.nodes.Root {
+			const ast = originalParseAsRoot.call(this);
+			// Check if the environment has the async extension and only then process the AST
+			if ((this.extensions as nunjucks.Extension[]).includes(AsyncEnvironment.asyncExtension)) {
+				AsyncEnvironment.astWalker.insertEmptyLineAtStart(ast);
+			}
+			return ast;
+		};
+
+		// Return a function that undoes the changes
+		return () => {
+			nunjucks.parser.Parser.prototype.parseAsRoot = originalParseAsRoot;
+		};
+	}
+
+	private monkeyPatchCompilerClass(sourceClass: any, targetPrototype: any): () => void {
+		const overrides: { name: string; original: Function }[] = [];
+
 		const propertyNames = Object.getOwnPropertyNames(sourceClass.prototype);
 		for (const name of propertyNames) {
 			if (name !== 'constructor' && typeof sourceClass.prototype[name] === 'function') {
 				const originalMethod = targetPrototype[name];
+				overrides.push({ name, original: originalMethod });
+
 				targetPrototype[name] = function (this: any, ...args: any[]) {
 					return sourceClass.prototype[name].apply(this, args);
 				};
-				// Optionally, store the original method if needed
-				targetPrototype[name].original = originalMethod;
 			}
 		}
+
+		// Return the undo function
+		return () => {
+			for (const override of overrides) {
+				targetPrototype[override.name] = override.original;
+			}
+		};
 	}
 
 	flattenNestedArray(arr: NestedStringArray): string {
