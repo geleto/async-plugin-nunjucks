@@ -5,9 +5,11 @@
 			"type": "npm",
 			"script": "build",
 			"group": "build",
-			"problemMatcher": [],
+			"problemMatcher": [
+				"$tsc"
+			],
 			"label": "npm: build",
-			"detail": "npm run build:esm && npm run build:cjs && npm run build:types"
+			"detail": "tsc -p tsconfig.json"
 		}
 	]
 }

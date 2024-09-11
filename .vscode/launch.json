@@ -32,7 +32,8 @@
 				"${workspaceFolder}/**",
 				"!**/node_modules/**"
 			],
-			"smartStep": true
+			"smartStep": true,
+			"preLaunchTask": "npm: build"
 		}
 	]
 }
