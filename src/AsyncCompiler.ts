@@ -4,6 +4,8 @@ import { compiler, runtime, nodes } from 'nunjucks';
 //@todo - SafeString with arrays, async suppressValue, async ensureDefined
 //see also markSafe, callWrap, makeKeywordArgs
 
+var useAsync = true;
+
 //This class is moneky patched over the original nunjucks.Compiler by overriding the methods
 //Do not add properties to this class, as they will not be available in the original class
 //Do not use super, as the methods are directly copied to the  nunjucks.Compiler class
@@ -23,16 +25,16 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				find: `${this.buffer} += `,
 				replace: `${this.buffer}[${this.buffer}_index++] = `
 			},
-			{
+			/*{
 				find: `${this.buffer} =`,
 				replace: `${this.buffer}[${this.buffer}_index++] =`,
 				ignorePrefix: 'var '
-			},
-			{
+			},*/
+			/*{
 				find: `${this.buffer});`,
 				replace: `${this.buffer}[${this.buffer}_index]);`,
 				ignorePrefix: 'cb(null, '
-			}
+			}*/
 		];
 
 		for (const replacement of replaces) {
