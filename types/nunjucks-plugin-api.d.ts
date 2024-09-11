@@ -1,5 +1,9 @@
 import * as nunjucks from 'nunjucks';
 
+declare module 'nunjucks/src/transformer' {
+	export function transform(ast: any, opts: any): any;
+}
+
 
 declare module 'nunjucks' {
 	const parser: {
@@ -10,6 +14,7 @@ declare module 'nunjucks' {
 	const compiler: {
 		compiler: Compiler;
 		Compiler: typeof Compiler;
+		compile: (src: string, asyncFilters: string[], extensions: nunjucks.Extension[], name: string, opts: Record<string, any> = {}) => Template;
 	}
 
 	namespace runtime {
@@ -137,11 +142,13 @@ declare module 'nunjucks' {
 		templateName: string | null;
 		codebuf: string[];
 		lastId: number;
-		buffer: string | null;
+		buffer: string;
 		bufferStack: string[];
 		inBlock: boolean;
 		throwOnUndefined: boolean;
+		_scopeClosers: string;
 
+		init(templateName: string | null, throwOnUndefined: boolean): void;
 		fail(msg: string, lineno?: number, colno?: number): never;
 		compileCallExtension(node: nodes.Node, frame: runtime.Frame, async: boolean): void;
 		compileCallExtensionAsync(node: nodes.Node, frame: runtime.Frame): void;
@@ -193,7 +200,7 @@ declare module 'nunjucks' {
 		compileCapture(node: nodes.Node, frame: runtime.Frame): void;
 		compileOutput(node: nodes.Output, frame: runtime.Frame): void;
 		compileRoot(node: nodes.Root, frame: runtime.Frame | null): void;
-		compile(node: nodes.Node, frame: runtime.Frame): void;
+		compile(node: nodes.Node, frame?: runtime.Frame): void;
 		getCode(): string;
 
 		_pushBuffer(): string;

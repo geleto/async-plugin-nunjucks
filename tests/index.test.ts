@@ -3,15 +3,15 @@ import * as nunjucks from 'nunjucks';
 import { AsyncEnvironment } from '../dist/index';
 
 describe('Async env', () => {
-	let env: nunjucks.Environment;
+	let env: AsyncEnvironment;
 
 	beforeEach(() => {
 		env = new AsyncEnvironment();
 	});
 
-	it('should add an empty line at the beginning of a single-line template', () => {
+	it('should add an empty line at the beginning of a single-line template', async () => {
 		const template = 'Hello, {{ name }}!';
-		const result = env.renderString(template, { name: 'World' });
+		const result = await env.renderStringAsync(template, { name: 'World' });
 		expect(result).to.equal('\nHello, World!');
 	});
 });
