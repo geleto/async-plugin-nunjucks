@@ -57,4 +57,72 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 		this.codebuf.push(code);
 	}
+
+	compileOutput(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
+		const children = node.children as nunjucks.nodes.Node[];
+		children.forEach(child => {
+			// TemplateData is a special case because it is never
+			// autoescaped, so simply output it for optimization
+			if (child instanceof nodes.TemplateData) {
+				if (child.value) {
+					this._emit(`${this.buffer} += `);
+					this.compileLiteral(child);//, frame);
+					this._emitLine(';');
+				}
+			} else {
+				if (useAsync) {
+					this._emit(
+						`(async ()=>{
+						var index = ${this.buffer}_index++;
+						${this.buffer}[index] = runtime.suppressValue(`
+					);
+				}
+				else {
+					this._emit(`${this.buffer} += runtime.suppressValue(`);
+				}
+
+				if (this.throwOnUndefined) {
+					this._emit('runtime.ensureDefined(');
+				}
+
+				this.compile(child, frame);
+
+				if (this.throwOnUndefined) {
+					this._emit(`,${node.lineno},${node.colno})`);
+				}
+
+				this._emit(', env.opts.autoescape);\n');
+
+				if (useAsync) {
+					this._emit('})();');
+				}
+			}
+		});
+	}
+
+	/*compileSymbol(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
+		var name = node.value;
+		var v = frame.lookup(name as string);
+
+		if (v) {
+			this._emit(v);
+		} else {
+			this._emit('runtime.contextOrFrameLookup(' +
+				'context, frame, "' + name + '")');
+		}
+	}
+
+	compileLookupVal(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
+		if (node.isAsync) {
+			this._emit('async(${})=>{ (await ');
+		}
+		this._emit('runtime.memberLookup((');
+		this._compileExpression(node.target as nunjucks.nodes.Node, frame);
+		this._emit('),');
+		this._compileExpression(node.val as nunjucks.nodes.Node, frame);
+		this._emit(')');
+		if (node.isAsync) {
+			this._emit(')}()');
+		}
+	}*/
 }
