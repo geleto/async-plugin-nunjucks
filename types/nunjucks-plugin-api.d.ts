@@ -32,6 +32,9 @@ declare module 'nunjucks' {
 			addExport(name: string): void;
 			getExports(): string[];
 			parent: runtime.Frame | null;
+			variables: Record<string, any>;
+			topLevel: boolean;
+			isolateWrites: boolean;
 		}
 		function makeMacro(argNames: string[], kwargNames: string[], func: Function): Function;
 		function makeKeywordArgs(obj: object): object;
