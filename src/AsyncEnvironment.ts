@@ -75,13 +75,11 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	}
 
 	private monkeyPatch() {
-		console.log('Patching');
 		const unpatchParseAsRoot = this.monkeyPatchParseAsRoot();
-		const unpatchClass = this.monkeyPatchCompilerClass(AsyncCompiler, nunjucks.compiler.Compiler.prototype);
+		const unpatchClass = this.monkeyPatchClass(AsyncCompiler, nunjucks.compiler.Compiler.prototype);
 		return () => {
 			unpatchParseAsRoot();
 			unpatchClass();
-			console.log('Unpatched');
 		};
 	}
 
@@ -105,8 +103,8 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		};
 	}
 
-	private monkeyPatchCompilerClass(sourceClass: any, targetPrototype: any): () => void {
-		const overrides: { name: string; original: Function }[] = [];
+	private monkeyPatchClass(sourceClass: any, targetPrototype: any): () => void {
+		const overrides: { name: string; original: Function | undefined }[] = [];
 
 		const propertyNames = Object.getOwnPropertyNames(sourceClass.prototype);
 		for (const name of propertyNames) {
@@ -123,7 +121,11 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		// Return the undo function
 		return () => {
 			for (const override of overrides) {
-				targetPrototype[override.name] = override.original;
+				if (override.original === undefined) {
+					delete targetPrototype[override.name];
+				} else {
+					targetPrototype[override.name] = override.original;
+				}
 			}
 		};
 	}
