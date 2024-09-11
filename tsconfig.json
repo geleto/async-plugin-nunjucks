@@ -18,7 +18,9 @@
 		],
 		"sourceMap": true,
 		"inlineSourceMap": false,
-		"inlineSources": false
+		"inlineSources": false,
+		"declaration": true,
+		"declarationMap": true
 	},
 	"include": [
 		"src/**/*.ts",
