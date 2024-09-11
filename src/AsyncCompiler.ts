@@ -7,7 +7,7 @@ import { compiler, runtime, nodes } from 'nunjucks';
 //This class is moneky patched over the original nunjucks.Compiler by overriding the methods
 //Do not add properties to this class, as they will not be available in the original class
 //Do not use super, as the methods are directly copied to the  nunjucks.Compiler class
-export class AsyncResolveCompiler extends nunjucks.compiler.Compiler {
+export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 	/*constructor(name: string, throwOnUndefined: boolean) {
 		super(name, throwOnUndefined);

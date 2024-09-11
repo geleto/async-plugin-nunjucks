@@ -1,6 +1,6 @@
 import * as nunjucks from 'nunjucks';
 import { ASTWalker } from './ASTWalker';
-import { AsyncResolveCompiler } from './AsyncResolveCompiler';
+import { AsyncCompiler } from './AsyncCompiler';
 
 //A dummy extension, only async environments have it, used to identify them
 export class AsyncExtension implements nunjucks.Extension {
@@ -44,7 +44,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		//const unpatch = this.monkeyPatchClass(nunjucks, 'Compiler', AsyncResolveCompiler);
 
 		console.log('Patching compiler');
-		this.monkeyPatchOverrides(AsyncResolveCompiler, nunjucks.compiler.Compiler.prototype);
+		this.monkeyPatchOverrides(AsyncCompiler, nunjucks.compiler.Compiler.prototype);
 
 		/*nunjucks.compiler.compile = function (src: string, asyncFilters: string[], extensions: nunjucks.Extension[], name: string, opts: Record<string, any> = {}): nunjucks.Template {
 			var c;
