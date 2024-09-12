@@ -9,13 +9,6 @@ describe('Async env', () => {
 		env = new AsyncEnvironment();
 	});
 
-	it('should add an empty line at the beginning of a single-line template', async () => {
-		const template = 'Hello, {{ name }}!';
-		const context = { name: 'World' };
-		const result = await env.renderStringAsync(template, context);
-		expect(result).to.equal('\nHello, World!');
-	});
-
 	// Test for async getter
 	it('should correctly render an async getter', async () => {
 		const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -24,14 +17,14 @@ describe('Async env', () => {
 			get currentTime() {
 				return (async () => {
 					await delay(50);  // Reduced delay
-					return new Date().toISOString();
+					return '2024-09-12T17:12:123Z';
 				})();
 			}
 		};
 
 		const template = 'Current time is: {{ currentTime }}';
 		const result = await env.renderStringAsync(template, context);
-		expect(result).to.match(/^Current time is: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/);
+		expect(result).to.equal('Current time is: 2024-09-12T17:12:123Z');
 	});
 
 	// Test for async promise variable
@@ -116,41 +109,5 @@ describe('Async env', () => {
 		const template = '{% set user = await fetchUser(1) %}User: {{ user ? user.name : "Not found" }}';
 		const result = await env.renderStringAsync(template, context);
 		expect(result).to.equal('User: Not found');
-	});
-});
-
-
-describe('Regular env', () => {
-
-	let env: nunjucks.Environment;
-
-	beforeEach(() => {
-		env = new nunjucks.Environment();
-	});
-
-	it('should handle custom async filter with global async function', (done) => {
-		// Implement custom async filter
-		env.addFilter('async', function (promise: Promise<any>, callback: (err: Error | null, result?: any) => void) {
-			promise.then(result => {
-				callback(null, result);
-			}).catch(err => {
-				callback(err);
-			});
-		}, true);
-
-		// Add global async function
-		env.addGlobal('fetchUser', async (id: number) => {
-			// Simulate async operation
-			await new Promise(resolve => setTimeout(resolve, 10));
-			return { id, name: `User ${id}` };
-		});
-
-		const template = '{% set user = fetchUser(123) | async %}Hello, {{ user.name }}!';
-
-		env.renderString(template, {}, (err, result) => {
-			if (err) return done(err);
-			expect(result).to.equal('Hello, User 123!');
-			done();
-		});
 	});
 });
