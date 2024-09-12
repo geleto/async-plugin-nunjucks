@@ -1,6 +1,9 @@
 import * as nunjucks from 'nunjucks';
 import { compiler, runtime, nodes } from 'nunjucks';
 
+//@todo - SafeString with arrays, async suppressValue, async ensureDefined
+//see also markSafe, callWrap, makeKeywordArgs
+
 var useAsync = true;
 
 //This class is moneky patched over the original nunjucks.Compiler by overriding the methods
@@ -84,7 +87,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 					this._emit(`,${node.lineno},${node.colno})`);
 				}
 
-				this._emit(', env.opts.autoescape);\n');//@todo the ;\n
+				this._emit(', env.opts.autoescape);\n');
 
 				this.emitAppendToBufferEnd();
 			}
@@ -131,11 +134,87 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			val = val.replace(/\r/g, '\\r');
 			val = val.replace(/\t/g, '\\t');
 			val = val.replace(/\u2028/g, '\\u2028');
-			this.codebuf.push(`"${val}"`);//no _emit find and replace for literals
+			this.codebuf.push(`"${val}"`);//no _emit with find and replace for literals
 		} else if (node.value === null) {
 			this._emit('null');
 		} else {
 			this._emit((node.value as any).toString());
+		}
+	}
+
+	//@todo - test
+	compileCallExtension(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame, async: boolean) {
+		var args = node.args;
+		var contentArgs = node.contentArgs;
+		var autoescape = typeof node.autoescape === 'boolean' ? node.autoescape : true;
+
+		if (!async) {
+			this.emitAppendToBufferBegin();
+			this._emit(`runtime.suppressValue(`);
+			this.emitAwaitBegin();
+		}
+
+		this._emit(`env.getExtension("${node.extName}")["${node.prop}"](`);
+		this._emit('context');
+
+		if (args || contentArgs) {
+			this._emit(',');
+		}
+
+		if (args && args.children !== undefined) {
+			if (!(args instanceof nodes.NodeList)) {
+				this.fail('compileCallExtension: arguments must be a NodeList, ' +
+					'use `parser.parseSignature`');
+			}
+
+			args.children.forEach((arg, i) => {
+				// Tag arguments are passed normally to the call. Note
+				// that keyword arguments are turned into a single js
+				// object as the last argument, if they exist.
+				this._compileExpression(arg, frame);
+
+				if (i !== ((args as nodes.Node).children as nodes.Node[]).length - 1 || contentArgs.length) {
+					this._emit(',');
+				}
+			});
+		}
+
+		if (contentArgs.length) {
+			contentArgs.forEach((arg: any, i: number) => {
+				if (i > 0) {
+					this._emit(',');
+				}
+
+				if (arg) {
+					this._emitLine('function(cb) {');
+					this._emitLine('if(!cb) { cb = function(err) { if(err) { throw err; }}}');
+					const id = this._pushBuffer();
+
+					this._withScopedSyntax(() => {
+						this.compile(arg, frame);
+						this._emitLine(`cb(null, ${id});`);
+					});
+
+					this._popBuffer();
+					this._emitLine(`return ${id};`);
+					this._emitLine('}');
+				} else {
+					this._emit('null');
+				}
+			});
+		}
+
+		if (async) {
+			const res = this._tmpid();
+			this._emitLine(', ' + this._makeCallback(res));
+			this._emitLine(
+				`${this.buffer} += runtime.suppressValue(${res}, ${autoescape} && env.opts.autoescape);`);
+			this._addScopeLevel();
+		} else {
+			this._emit(')');
+			this.emitAwaitEnd();
+			this._emit(`, ${autoescape} && env.opts.autoescape);\n`);
+			this.emitAppendToBufferEnd();
 		}
 	}
 }
