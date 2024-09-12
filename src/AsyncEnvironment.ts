@@ -2,6 +2,7 @@ import * as nunjucks from 'nunjucks';
 import { ASTWalker } from './ASTWalker';
 import { AsyncCompiler } from './AsyncCompiler';
 
+
 //A dummy extension, only async environments have it, used to identify them
 export class AsyncExtension implements nunjucks.Extension {
 	tags: string[] = [];
@@ -11,10 +12,13 @@ export class AsyncExtension implements nunjucks.Extension {
 
 type NestedStringArray = (string | NestedStringArray)[];
 
+//@todo - move the monkey patching to a separate class
 export class AsyncEnvironment extends nunjucks.Environment {
 	private static asyncExtension = new AsyncExtension();
 	private static astWalker = new ASTWalker();
-	static monkeyPatched = false;
+	private activeAwaits = 0;
+	private static monkeyPatched = false;
+	private completionResolver: (() => void) | null = null;
 
 	constructor(loader?: nunjucks.ILoaderAny | nunjucks.ILoaderAny[], opts?: nunjucks.ConfigureOptions) {
 		super(loader, opts);
@@ -24,54 +28,57 @@ export class AsyncEnvironment extends nunjucks.Environment {
 
 	// Asynchronously render a template from a file with AST modification and caching
 	async renderAsync(templateName: string, context: object): Promise<string> {
-		let undoPatch: () => void;
+		let undoPatch: (() => void) | undefined;
 		if (!AsyncEnvironment.monkeyPatched) {
 			AsyncEnvironment.monkeyPatched = true;
 			undoPatch = this.monkeyPatch();
 		}
-		return new Promise((resolve, reject) => {
-			this.render(templateName, context, (err, res) => {
-				if (undoPatch) {
-					undoPatch();
-				}
-				//the returned value in res is actually a NestedStringArray
-				if (err || res === null) {
-					reject(err ?? new Error('No render result'));
-				}
-				else {
-					//resolve(res);
-					resolve(this.flattenNestedArray(res as unknown as NestedStringArray));
-				}
+
+		try {
+			const res = await new Promise<NestedStringArray>((resolve, reject) => {
+				this.render(templateName, context, (err, res) => {
+					if (err || res === null) {
+						reject(err ?? new Error('No render result'));
+					} else {
+						resolve(res as unknown as NestedStringArray);
+					}
+				});
 			});
-		});
+
+			await this.waitAll();
+			return this.flattenNestedArray(res);
+		} finally {
+			if (undoPatch) {
+				undoPatch();
+			}
+		}
 	}
 
 	async renderStringAsync(templateString: string, context: object): Promise<string> {
-		let undoPatch: () => void;
+		let undoPatch: (() => void) | undefined;
 		if (!AsyncEnvironment.monkeyPatched) {
 			AsyncEnvironment.monkeyPatched = true;
 			undoPatch = this.monkeyPatch();
 		}
-		return new Promise((resolve, reject) => {
-			this.renderString(templateString, context, (err, res) => {
-				if (undoPatch) {
-					undoPatch();
-				}
-				if (err || res === null) {
-					reject(err ?? new Error('No render result'));
-				}
-				else {
-					resolve(this.flattenNestedArray(res as unknown as NestedStringArray));
-				}
-			});
-		});
-	}
 
-	private flattenResuls(results: any[]): any {
-		if (Array.isArray(results)) {
-			return results.map(this.flattenResuls.bind(this)).join('');
+		try {
+			const res = await new Promise<NestedStringArray>((resolve, reject) => {
+				this.renderString(templateString, context, (err, res) => {
+					if (err || res === null) {
+						reject(err ?? new Error('No render result'));
+					} else {
+						resolve(res as unknown as NestedStringArray);
+					}
+				});
+			});
+
+			await this.waitAll();
+			return this.flattenNestedArray(res);
+		} finally {
+			if (undoPatch) {
+				undoPatch();
+			}
 		}
-		return results;
 	}
 
 	private monkeyPatch() {
@@ -138,5 +145,26 @@ export class AsyncEnvironment extends nunjucks.Environment {
 			return acc + item;
 		}, '');
 		return result;
+	}
+
+	startAwait(): void {
+		this.activeAwaits++;
+	}
+
+	endAwait(): void {
+		this.activeAwaits--;
+		if (this.activeAwaits === 0 && this.completionResolver) {
+			this.completionResolver();
+			this.completionResolver = null;
+		}
+	}
+
+	async waitAll(): Promise<void> {
+		if (this.activeAwaits === 0) {
+			return Promise.resolve();
+		}
+		return new Promise<void>(resolve => {
+			this.completionResolver = resolve;
+		});
 	}
 }

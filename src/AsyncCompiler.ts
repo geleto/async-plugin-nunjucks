@@ -1,61 +1,62 @@
 import * as nunjucks from 'nunjucks';
 import { compiler, runtime, nodes } from 'nunjucks';
 
-//@todo - SafeString with arrays, async suppressValue, async ensureDefined
-//see also markSafe, callWrap, makeKeywordArgs
-
 var useAsync = true;
 
 //This class is moneky patched over the original nunjucks.Compiler by overriding the methods
-//Do not add properties to this class, as they will not be available in the original class
-//Do not use super, as the methods are directly copied to the  nunjucks.Compiler class
+//Do not add properties to this class, do not use super
 export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
-	/*constructor(name: string, throwOnUndefined: boolean) {
-		super(name, throwOnUndefined);
-	}*/
-
 	_emit(code: string) {
-		const replaces = [
-			{
-				find: `var ${this.buffer} = "";`,
-				replace: `var ${this.buffer} = []; var ${this.buffer}_index = 0;`
-			},
-			{
-				find: `${this.buffer} += `,
-				replace: `${this.buffer}[${this.buffer}_index++] = `
-			},
-			/*{
-				find: `${this.buffer} =`,
-				replace: `${this.buffer}[${this.buffer}_index++] =`,
-				ignorePrefix: 'var '
-			},*/
-			/*{
-				find: `${this.buffer});`,
-				replace: `${this.buffer}[${this.buffer}_index]);`,
-				ignorePrefix: 'cb(null, '
-			}*/
-		];
-
-		for (const replacement of replaces) {
-			let index = 0;
-			while ((index = code.indexOf(replacement.find, index)) !== -1) {
-				if ('ignorePrefix' in replacement) {
-					const prefixStart = Math.max(0, index - (replacement.ignorePrefix as string).length);
-					const prefix = code.slice(prefixStart, index);
-
-					if (prefix === replacement.ignorePrefix) {
-						index += replacement.find.length;
-						continue;
-					}
+		if (useAsync) {
+			const replaces = [
+				{
+					find: `var ${this.buffer} = "";`,
+					replace: `var ${this.buffer} = []; var ${this.buffer}_index = 0;`
+				},
+				{
+					find: `${this.buffer} += `,
+					replace: `${this.buffer}[${this.buffer}_index++] = `
 				}
+			];
 
-				code = code.slice(0, index) + replacement.replace + code.slice(index + replacement.find.length);
-				index += replacement.replace.length;
+			for (const replacement of replaces) {
+				let index = 0;
+				while ((index = code.indexOf(replacement.find, index)) !== -1) {
+					code = code.slice(0, index) + replacement.replace + code.slice(index + replacement.find.length);
+					index += replacement.replace.length;
+				}
 			}
 		}
 
 		this.codebuf.push(code);
+	}
+
+	emitAwaitBegin() {
+		if (useAsync) {
+			this._emit('(await(async ()=>{env.startAwait();try{return await ');
+		}
+	}
+
+	emitAwaitEnd() {
+		if (useAsync) {
+			this._emit(';}finally{env.endAwait();}})())');
+		}
+	}
+
+	emitAppendToBufferBegin() {
+		if (useAsync) {
+			this._emit(`(async ()=>{var index = ${this.buffer}_index++;${this.buffer}[index] = `);
+		}
+		else {
+			this._emit(`${this.buffer} += `);
+		}
+	}
+
+	emitAppendToBufferEnd() {
+		if (useAsync) {
+			this._emit('})();');
+		}
 	}
 
 	compileOutput(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
@@ -70,16 +71,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 					this._emitLine(';');
 				}
 			} else {
-				if (useAsync) {
-					this._emit(
-						`(async ()=>{
-						var index = ${this.buffer}_index++;
-						${this.buffer}[index] = runtime.suppressValue(`
-					);
-				}
-				else {
-					this._emit(`${this.buffer} += runtime.suppressValue(`);
-				}
+				this.emitAppendToBufferBegin();
+				this._emit('runtime.suppressValue(');
 
 				if (this.throwOnUndefined) {
 					this._emit('runtime.ensureDefined(');
@@ -91,38 +84,58 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 					this._emit(`,${node.lineno},${node.colno})`);
 				}
 
-				this._emit(', env.opts.autoescape);\n');
+				this._emit(', env.opts.autoescape);\n');//@todo the ;\n
 
-				if (useAsync) {
-					this._emit('})();');
-				}
+				this.emitAppendToBufferEnd();
 			}
 		});
 	}
 
-	/*compileSymbol(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
+	compileSymbol(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
 		var name = node.value;
 		var v = frame.lookup(name as string);
 
 		if (v) {
 			this._emit(v);
 		} else {
+			if (useAsync) {
+				this.emitAwaitBegin();
+			}
 			this._emit('runtime.contextOrFrameLookup(' +
 				'context, frame, "' + name + '")');
+			if (useAsync) {
+				this.emitAwaitEnd();
+			}
 		}
 	}
 
 	compileLookupVal(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
-		if (node.isAsync) {
-			this._emit('async(${})=>{ (await ');
+		if (useAsync) {
+			this.emitAwaitBegin();
 		}
 		this._emit('runtime.memberLookup((');
 		this._compileExpression(node.target as nunjucks.nodes.Node, frame);
 		this._emit('),');
 		this._compileExpression(node.val as nunjucks.nodes.Node, frame);
 		this._emit(')');
-		if (node.isAsync) {
-			this._emit(')}()');
+		if (useAsync) {
+			this.emitAwaitEnd();
 		}
-	}*/
+	}
+
+	compileLiteral(node: nunjucks.nodes.Node) {
+		if (typeof node.value === 'string') {
+			let val = node.value.replace(/\\/g, '\\\\');
+			val = val.replace(/"/g, '\\"');
+			val = val.replace(/\n/g, '\\n');
+			val = val.replace(/\r/g, '\\r');
+			val = val.replace(/\t/g, '\\t');
+			val = val.replace(/\u2028/g, '\\u2028');
+			this.codebuf.push(`"${val}"`);//no _emit find and replace for literals
+		} else if (node.value === null) {
+			this._emit('null');
+		} else {
+			this._emit((node.value as any).toString());
+		}
+	}
 }
