@@ -2,7 +2,7 @@
 
 This is Work in Progress and not yet ready
 
-A plugin for the Nunjucks templating engine that transparently allows templates to work with asynchronous context properties and functions, plugins and filters. It fetches data in parallel in a non-blocking manner while ensuring that dependent data wait for their prerequisites to complete.
+A Nunjucks templating engine plugin that seamlessly supports asynchronous context properties and functions. It fetches data in parallel in a non-blocking fashion while ensuring that dependent data wait for their prerequisites to complete.
 
 This approach significantly reduces overall rendering time for templates with multiple asynchronous operations.
 
