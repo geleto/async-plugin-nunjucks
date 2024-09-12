@@ -20,10 +20,8 @@ This approach significantly reduces overall rendering time for templates with mu
    - [renderStringAsync](#renderstringasync)
 6. [Async Filter Support](#async-filter-support)
 7. [Async Plugin Support](#async-plugin-support)
-8. [Performance Considerations](#performance-considerations)
-9. [Error Handling](#error-handling)
-10. [Compatibility](#compatibility)
-11. [License](#license)
+8. [Compatibility](#compatibility)
+9. [License](#license)
 
 ## How It Works
 
