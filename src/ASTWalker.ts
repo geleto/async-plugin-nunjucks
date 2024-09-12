@@ -12,6 +12,6 @@ export class ASTWalker {
 		if (!ast.children) {
 			throw new Error('Invalid AST has no children');
 		}
-		ast.children.unshift(outputNode); // Insert at the beginning of the children array
+		//ast.children.unshift(outputNode); // Insert at the beginning of the children array
 	}
 }
