@@ -1,9 +1,6 @@
 import * as nunjucks from 'nunjucks';
 import { compiler, runtime, nodes } from 'nunjucks';
 
-//@todo - SafeString with arrays, async suppressValue, async ensureDefined
-//see also markSafe, callWrap, makeKeywordArgs
-
 var useAsync = true;
 
 //This class is moneky patched over the original nunjucks.Compiler by overriding the methods
