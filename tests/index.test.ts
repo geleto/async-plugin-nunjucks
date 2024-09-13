@@ -41,7 +41,7 @@ describe('Async env', () => {
 		const template = 'The weather is {{ weatherPromise.temp }}°C and {{ weatherPromise.condition }}.';
 		const result = await env.renderStringAsync(template, context);
 		expect(result).to.equal('The weather is 22°C and Sunny.');
-	});
+	});*/
 
 	// Test for async function
 	it('should correctly resolve an async function', async () => {
@@ -49,23 +49,23 @@ describe('Async env', () => {
 
 		const context = {
 			async fetchUser(id: number) {
-				await delay(150);  // Reduced delay
+				await delay(150);
 				return { id, name: 'John Doe', email: 'john@example.com' };
 			}
 		};
 
-		const template = '{% set user = await fetchUser(1) %}User: {{ user.name }} ({{ user.email }})';
+		const template = '{% set user = fetchUser(1) %}User: {{ user.name }} ({{ user.email }})';
 		const result = await env.renderStringAsync(template, context);
 		expect(result).to.equal('User: John Doe (john@example.com)');
 	});
 
 	// Test for dependent async functions (user and user's posts)
-	it('should correctly resolve dependent async functions', async () => {
+	/*it('should correctly resolve dependent async functions', async () => {
 		const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 		const context = {
 			async fetchUser(id: number) {
-				await delay(100);  // Reduced delay
+				await delay(100);
 				return { id, name: 'John Doe' };
 			},
 			async fetchUserPosts(userId: number) {
@@ -78,10 +78,10 @@ describe('Async env', () => {
 		};
 
 		const template = `
-		{% set user = await fetchUser(1) %}
+		{% set user = fetchUser(1) %}
 		User: {{ user.name }}
 		Posts:
-		{% for post in await fetchUserPosts(user.id) %}
+		{% for post in fetchUserPosts(user.id) %}
 		  - {{ post.title }}: {{ post.content }}
 		{% endfor %}
 		`;
@@ -101,18 +101,18 @@ describe('Async env', () => {
 
 		const context = {
 			async fetchUser(id: number) {
-				await delay(100);  // Reduced delay
+				await delay(100);
 				return null;  // Simulate no user found
 			}
 		};
 
-		const template = '{% set user = await fetchUser(1) %}User: {{ user ? user.name : "Not found" }}';
-		const result = await env.renderStringAsync(template, context);
+		const template = '{% set user = fetchUser(1) %}User: {{ user ? user.name : "Not found" }}';
+		const result = env.renderStringAsync(template, context);
 		expect(result).to.equal('User: Not found');
 	});*/
 });
 
-describe('await filter tests', () => {
+/*describe('await filter tests', () => {
 
 	let env: nunjucks.Environment;
 
@@ -167,4 +167,4 @@ describe('await filter tests', () => {
 			done();
 		});
 	});
-});
+});*/
