@@ -4,7 +4,9 @@ import { compiler, runtime, nodes } from 'nunjucks';
 var useAsync = true;
 
 //This class is moneky patched over the original nunjucks.Compiler by overriding the methods
-//Do not add properties to this class, do not use super
+//Do not add properties to this class (this can be fixed if needed)
+//instead of super().someFunction() use super_someFunction()
+//This would not have been necessary if nunjucks allowed to override the compiler class
 export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 	_emit(code: string) {
@@ -32,6 +34,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		this.codebuf.push(code);
 	}
 
+	//wrap await calls in this, maybe we should only env.startAwait()/endAwait() the async blocks
 	emitAwaitBegin() {
 		if (useAsync) {
 			this._emit('(await(async ()=>{env.startAwait();try{return await ');
@@ -43,6 +46,21 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emit(';}finally{env.endAwait();}})())');
 		}
 	}
+
+	//wrap async blocks in this, @todo - rename to emitAsyncBlockBegin, async scope? blockl? section?:
+	//@todo - try/finaly
+	emitAsyncBegin() {
+		if (useAsync) {
+			this._emit('(async ()=>{env.startAwait();');
+		}
+	}
+
+	emitAsyncEnd() {
+		if (useAsync) {
+			this._emit(';env.endAwait();})();');
+		}
+	}
+
 
 	emitAppendToBufferBegin() {
 		if (useAsync) {
@@ -212,6 +230,17 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this.emitAwaitEnd();
 			this._emit(`, ${autoescape} && env.opts.autoescape);\n`);
 			this.emitAppendToBufferEnd();
+		}
+	}
+
+
+	compileFunCall(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
+		if (useAsync) {
+			this.emitAsyncBegin();
+		}
+		(this as any).super_compileFunCall(node, frame);
+		if (useAsync) {
+			this.emitAsyncEnd();
 		}
 	}
 }
