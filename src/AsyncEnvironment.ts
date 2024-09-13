@@ -50,6 +50,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		} finally {
 			if (undoPatch) {
 				undoPatch();
+				AsyncEnvironment.monkeyPatched = false;
 			}
 		}
 	}
@@ -77,6 +78,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		} finally {
 			if (undoPatch) {
 				undoPatch();
+				AsyncEnvironment.monkeyPatched = false;
 			}
 		}
 	}
