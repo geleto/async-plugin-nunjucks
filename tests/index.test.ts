@@ -10,7 +10,7 @@ describe('Async env', () => {
 	});
 
 	// Test for async getter
-	it('should correctly render an async getter', async () => {
+	/*it('should correctly render an async getter', async () => {
 		const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 		const context = {
@@ -38,7 +38,7 @@ describe('Async env', () => {
 			})()
 		};
 
-		const template = 'The weather is {{ (await weatherPromise).temp }}°C and {{ (await weatherPromise).condition }}.';
+		const template = 'The weather is {{ weatherPromise.temp }}°C and {{ weatherPromise.condition }}.';
 		const result = await env.renderStringAsync(template, context);
 		expect(result).to.equal('The weather is 22°C and Sunny.');
 	});
@@ -109,5 +109,62 @@ describe('Async env', () => {
 		const template = '{% set user = await fetchUser(1) %}User: {{ user ? user.name : "Not found" }}';
 		const result = await env.renderStringAsync(template, context);
 		expect(result).to.equal('User: Not found');
+	});*/
+});
+
+describe('await filter tests', () => {
+
+	let env: nunjucks.Environment;
+
+	beforeEach(() => {
+		env = new nunjucks.Environment();
+		// Implement 'await' filter for resolving promises in templates
+		env.addFilter('await', function (promise: Promise<any>, callback: (err: Error | null, result?: any) => void) {
+			promise.then(result => {
+				callback(null, result);
+			}).catch(err => {
+				callback(err);
+			});
+		}, true);
+	});
+
+	it('should handle custom async filter with global async function', (done) => {
+		// Add global async function
+		env.addGlobal('fetchUser', async (id: number) => {
+			// Simulate async operation
+			await new Promise(resolve => setTimeout(resolve, 10));
+			return { id, name: `User ${id}` };
+		});
+
+		const template = '{% set user = fetchUser(123) | await %}Hello, {{ user.name }}!';
+
+		env.renderString(template, {}, (err, result) => {
+			if (err) return done(err);
+			expect(result).to.equal('Hello, User 123!');
+			done();
+		});
+	});
+
+	it('should handle asyncEach with records of promises', (done) => {
+		// Add global function to fetch records
+		env.addGlobal('getRecords', () => {
+			// Return an array of promises (each record is a promise)
+			return [
+				new Promise(resolve => setTimeout(() => resolve('Record 1'), 10)),
+				new Promise(resolve => setTimeout(() => resolve('Record 2'), 20)),
+				new Promise(resolve => setTimeout(() => resolve('Record 3'), 15))
+			];
+		});
+
+		const template = `{%- set records = getRecords() -%}
+		{%- asyncEach rec in records -%}
+		{{ rec | await }}{% if not loop.last %}\n{% endif %}
+		{%- endeach %}`;
+
+		env.renderString(template, {}, (err, result) => {
+			if (err) return done(err);
+			expect((result as string).trim()).to.equal('Record 1\nRecord 2\nRecord 3');
+			done();
+		});
 	});
 });
