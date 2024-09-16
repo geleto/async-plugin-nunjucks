@@ -113,43 +113,45 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	}
 
 	private monkeyPatchClass(sourceClass: any, targetPrototype: any): () => void {
-		const overrides: { name: string; original: Function | undefined }[] = [];
+		const overrides: { name: string; originalValue: any; isMethod: boolean }[] = [];
 
 		const propertyNames = Object.getOwnPropertyNames(sourceClass.prototype);
 		for (const name of propertyNames) {
-			if (name !== 'constructor' && typeof sourceClass.prototype[name] === 'function') {
-				const originalMethod = targetPrototype[name];
-				overrides.push({ name, original: originalMethod });
+			if (name !== 'constructor') {
+				const value = sourceClass.prototype[name];
+				const isMethod = typeof value === 'function';
 
-				// Save the original method with 'super_' prepended
-				if (originalMethod) {
-					targetPrototype[`super_${name}`] = originalMethod;
+				// Save the original value
+				const originalValue = targetPrototype[name];
+				overrides.push({ name, originalValue, isMethod });
+
+				// Save the original method with 'super_' prefixed if it's a method
+				if (isMethod && originalValue !== undefined) {
+					targetPrototype[`super_${name}`] = originalValue;
 				}
 
-				targetPrototype[name] = function (this: any, ...args: any[]) {
-					return sourceClass.prototype[name].apply(this, args);
-				};
+				// Copy the property or method
+				targetPrototype[name] = value;
 			}
 		}
 
 		// Return the undo function
 		return () => {
-			for (const override of overrides) {
-				// Restore original methods, if they existed
-				if (override.original === undefined) {
-					delete targetPrototype[override.name];
+			for (const { name, originalValue, isMethod } of overrides) {
+				// Restore original properties, if they existed
+				if (originalValue === undefined) {
+					delete targetPrototype[name];
 				} else {
-					targetPrototype[override.name] = override.original;
+					targetPrototype[name] = originalValue;
 				}
 
-				// Remove the 'super_' version if it exists
-				if (targetPrototype.hasOwnProperty(`super_${override.name}`)) {
-					delete targetPrototype[`super_${override.name}`];
+				// Remove the 'super_' version if it exists and it's a method
+				if (isMethod && targetPrototype.hasOwnProperty(`super_${name}`)) {
+					delete targetPrototype[`super_${name}`];
 				}
 			}
 		};
 	}
-
 
 	flattenNestedArray(arr: NestedStringArray): string {
 		const result = arr.reduce<string>((acc, item) => {
