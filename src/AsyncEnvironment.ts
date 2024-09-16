@@ -85,7 +85,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 
 	private monkeyPatch() {
 		const unpatchParseAsRoot = this.monkeyPatchParseAsRoot();
-		const unpatchClass = this.monkeyPatchClass(AsyncCompiler, nunjucks.compiler.Compiler.prototype);
+		const unpatchClass = this.monkeyPatchClass(AsyncCompiler, nunjucks.compiler.Compiler);
 		return () => {
 			unpatchParseAsRoot();
 			unpatchClass();
@@ -112,13 +112,16 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		};
 	}
 
-	private monkeyPatchClass(sourceClass: any, targetPrototype: any): () => void {
+	private monkeyPatchClass(sourceClass: any, targetClass: any): () => void {
 		const overrides: { name: string; originalValue: any; isMethod: boolean }[] = [];
+		const targetPrototype = targetClass.prototype;
+		const sourcePrototype = sourceClass.prototype;
 
-		const propertyNames = Object.getOwnPropertyNames(sourceClass.prototype);
+		// Copy prototype methods and properties, excluding 'constructor' and 'init'
+		const propertyNames = Object.getOwnPropertyNames(sourcePrototype);
 		for (const name of propertyNames) {
-			if (name !== 'constructor') {
-				const value = sourceClass.prototype[name];
+			if (name !== 'constructor' && name !== 'init') {
+				const value = sourcePrototype[name];
 				const isMethod = typeof value === 'function';
 
 				// Save the original value
@@ -130,15 +133,56 @@ export class AsyncEnvironment extends nunjucks.Environment {
 					targetPrototype[`super_${name}`] = originalValue;
 				}
 
-				// Copy the property or method
+				// Copy the method or property
 				targetPrototype[name] = value;
 			}
 		}
 
+		// Monkey-patch the 'init' method to copy non-function instance properties from a new sourceClass instance
+		const originalInit = targetPrototype.init;
+
+		// Save the original 'init' method
+		overrides.push({ name: 'init', originalValue: originalInit, isMethod: true });
+
+		// Save the original 'init' method with 'super_' prefixed if it exists
+		if (originalInit) {
+			targetPrototype['super_init'] = originalInit;
+		}
+
+		// Create the patched 'init' method
+		targetPrototype.init = function (this: any, ...args: any[]) {
+			const sourceInitBackup = sourceClass.prototype.init;
+
+			// Temporarily restore the original 'init' method on sourceClass.prototype
+			if (sourceClass.prototype.init === targetPrototype.init) {
+				sourceClass.prototype.init = originalInit;
+			}
+
+			try {
+				// Create a new instance of sourceClass
+				const sourceInstance = new sourceClass(...args);
+
+				// Copy non-function instance properties from sourceInstance to 'this'
+				Object.getOwnPropertyNames(sourceInstance).forEach((prop) => {
+					const value = sourceInstance[prop];
+					if (typeof value !== 'function') {
+						this[prop] = value;
+					}
+				});
+			} finally {
+				// Restore the 'init' method on sourceClass.prototype
+				sourceClass.prototype.init = sourceInitBackup;
+			}
+
+			// Then call the original target 'init' method, if it exists
+			if (originalInit) {
+				originalInit.apply(this, args);
+			}
+		};
+
 		// Return the undo function
 		return () => {
 			for (const { name, originalValue, isMethod } of overrides) {
-				// Restore original properties, if they existed
 				if (originalValue === undefined) {
 					delete targetPrototype[name];
 				} else {
@@ -152,6 +196,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 			}
 		};
 	}
+
 
 	flattenNestedArray(arr: NestedStringArray): string {
 		const result = arr.reduce<string>((acc, item) => {
