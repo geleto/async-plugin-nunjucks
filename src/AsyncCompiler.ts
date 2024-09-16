@@ -47,15 +47,32 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		}
 	}
 
-	//@todo - try/finaly
-	emitAsyncBegin() {
+	//an async block that does not return a value should be wrapped in this
+	emitAsyncBlockBegin() {
 		if (useAsync) {
-			this._emit('(async ()=>{');
-			this._emitLine('try{env.startAwait();');
+			this._emit('(async ()=>{ try');
+			this._emitLine('{env.startAwait();');
 		}
 	}
 
-	emitAsyncEnd() {
+	emitAsyncBlockEnd() {
+		if (useAsync) {
+			this._emitLine('}');
+			this._emitLine('finally{');
+			this._emitLine('env.endAwait()');
+			this._emitLine('}})();');
+		}
+	}
+
+	emitAsyncReturnBegin() {
+		if (useAsync) {
+			this._emitLine('(async ()=>{ try');
+			this._emitLine('{env.startAwait();');
+			this._emit('return ');
+		}
+	}
+
+	emitAsyncReturnEnd() {
 		if (useAsync) {
 			this._emitLine('}');
 			this._emitLine('finally{');
@@ -65,7 +82,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	}
 
 
-	emitAppendToBufferBegin() {
+
+	emitAssyncAddToBufferBegin() {
 		if (useAsync) {
 			this._emitLine('(async ()=>{');
 			this._emitLine('env.startAwait();');
@@ -77,7 +95,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		}
 	}
 
-	emitAppendToBufferEnd() {
+	emitAddToBufferEnd() {
 		if (useAsync) {
 			this._emitLine('env.endAwait();');
 			this._emitLine('})();');
@@ -96,7 +114,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 					this._emitLine(';');
 				}
 			} else {
-				this.emitAppendToBufferBegin();
+				this.emitAssyncAddToBufferBegin();
 				this._emit('runtime.suppressValue(');
 
 				if (this.throwOnUndefined) {
@@ -111,7 +129,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 				this._emit(', env.opts.autoescape);\n');
 
-				this.emitAppendToBufferEnd();
+				this.emitAddToBufferEnd();
 			}
 		});
 	}
@@ -171,7 +189,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		var autoescape = typeof node.autoescape === 'boolean' ? node.autoescape : true;
 
 		if (!async) {
-			this.emitAppendToBufferBegin();
+			this.emitAssyncAddToBufferBegin();
 			this._emit(`runtime.suppressValue(`);
 			this.emitAwaitBegin();
 		}
@@ -236,18 +254,18 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emit(')');
 			this.emitAwaitEnd();
 			this._emit(`, ${autoescape} && env.opts.autoescape);\n`);
-			this.emitAppendToBufferEnd();
+			this.emitAddToBufferEnd();
 		}
 	}
 
 
 	compileFunCall(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
 		if (useAsync) {
-			this.emitAsyncBegin();
+			this.emitAsyncReturnBegin();
 		}
 		(this as any).super_compileFunCall(node, frame);
 		if (useAsync) {
-			this.emitAsyncEnd();
+			this.emitAsyncReturnEnd();
 		}
 	}
 }
