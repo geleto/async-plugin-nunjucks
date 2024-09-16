@@ -37,34 +37,40 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	//wrap await calls in this, maybe we should only env.startAwait()/endAwait() the async blocks
 	emitAwaitBegin() {
 		if (useAsync) {
-			this._emit('(await(async ()=>{env.startAwait();try{return await ');
+			this._emit('(await ');
 		}
 	}
 
 	emitAwaitEnd() {
 		if (useAsync) {
-			this._emit(';}finally{env.endAwait();}})())');
+			this._emit(')');
 		}
 	}
 
-	//wrap async blocks in this, @todo - rename to emitAsyncBlockBegin, async scope? blockl? section?:
 	//@todo - try/finaly
 	emitAsyncBegin() {
 		if (useAsync) {
-			this._emit('(async ()=>{env.startAwait();');
+			this._emit('(async ()=>{');
+			this._emitLine('try{env.startAwait();');
 		}
 	}
 
 	emitAsyncEnd() {
 		if (useAsync) {
-			this._emit(';env.endAwait();})();');
+			this._emitLine('}');
+			this._emitLine('finally{');
+			this._emitLine('env.endAwait()');
+			this._emitLine('}})();');
 		}
 	}
 
 
 	emitAppendToBufferBegin() {
 		if (useAsync) {
-			this._emit(`(async ()=>{var index = ${this.buffer}_index++;${this.buffer}[index] = `);
+			this._emitLine('(async ()=>{');
+			this._emitLine('env.startAwait();');
+			this._emitLine(`var index = ${this.buffer}_index++;`);
+			this._emit(`${this.buffer}[index] = `);
 		}
 		else {
 			this._emit(`${this.buffer} += `);
@@ -73,7 +79,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 	emitAppendToBufferEnd() {
 		if (useAsync) {
-			this._emit('})();');
+			this._emitLine('env.endAwait();');
+			this._emitLine('})();');
 		}
 	}
 
