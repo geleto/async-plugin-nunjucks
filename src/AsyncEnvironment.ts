@@ -113,68 +113,40 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	}
 
 	private monkeyPatchClass(sourceClass: any, targetClass: any): () => void {
-		const overrides: { name: string; originalValue: any; isMethod: boolean }[] = [];
 		const targetPrototype = targetClass.prototype;
 		const sourcePrototype = sourceClass.prototype;
 
-		// Copy prototype methods and properties, excluding 'constructor' and 'init'
+		// Override prototype methods and store originals in 'super_' prefixed methods
 		const propertyNames = Object.getOwnPropertyNames(sourcePrototype);
 		for (const name of propertyNames) {
 			if (name !== 'constructor' && name !== 'init') {
 				const value = sourcePrototype[name];
-				const isMethod = typeof value === 'function';
-
-				// Save the original value
-				const originalValue = targetPrototype[name];
-				overrides.push({ name, originalValue, isMethod });
-
-				// Save the original method with 'super_' prefixed if it's a method
-				if (isMethod && originalValue !== undefined) {
-					targetPrototype[`super_${name}`] = originalValue;
-				}
-
-				// Copy the method or property
-				targetPrototype[name] = value;
-			}
-		}
-
-		// Monkey-patch the 'init' method to copy non-function instance properties from a new sourceClass instance
-		const originalInit = targetPrototype.init;
-
-		// Save the original 'init' method
-		overrides.push({ name: 'init', originalValue: originalInit, isMethod: true });
-
-		// Save the original 'init' method with 'super_' prefixed if it exists
-		if (originalInit) {
-			targetPrototype['super_init'] = originalInit;
-		}
-
-		// Create the patched 'init' method
-		targetPrototype.init = function (this: any, ...args: any[]) {
-			const sourceInitBackup = sourceClass.prototype.init;
-
-			// Temporarily restore the original 'init' method on sourceClass.prototype
-			if (sourceClass.prototype.init === targetPrototype.init) {
-				sourceClass.prototype.init = originalInit;
-			}
-
-			try {
-				// Create a new instance of sourceClass
-				const sourceInstance = new sourceClass(...args);
-
-				// Copy non-function instance properties from sourceInstance to 'this'
-				Object.getOwnPropertyNames(sourceInstance).forEach((prop) => {
-					const value = sourceInstance[prop];
-					if (typeof value !== 'function') {
-						this[prop] = value;
+				if (typeof value === 'function') {
+					// Store the original method in 'super_' prefixed property
+					if (typeof targetPrototype[name] === 'function') {
+						targetPrototype[`super_${name}`] = targetPrototype[name];
 					}
-				});
-			} finally {
-				// Restore the 'init' method on sourceClass.prototype
-				sourceClass.prototype.init = sourceInitBackup;
+					targetPrototype[name] = value;
+				}
+			}
+		}
+
+		// Override the 'init' method
+		const originalInit = targetPrototype.init;
+		targetPrototype.init = function (this: any, ...args: any[]) {
+			// Create a new instance of sourceClass
+			if (this instanceof sourceClass) {
+				return;
+			}
+			const sourceInstance = new sourceClass(...args);
+
+			// Copy non-function instance properties from sourceInstance to 'this'
+			for (const prop in sourceInstance) {
+				if (typeof sourceInstance[prop] !== 'function') {
+					this[prop] = sourceInstance[prop];
+				}
 			}
 
-			// Then call the original target 'init' method, if it exists
 			if (originalInit) {
 				originalInit.apply(this, args);
 			}
@@ -182,18 +154,21 @@ export class AsyncEnvironment extends nunjucks.Environment {
 
 		// Return the undo function
 		return () => {
-			for (const { name, originalValue, isMethod } of overrides) {
-				if (originalValue === undefined) {
-					delete targetPrototype[name];
-				} else {
-					targetPrototype[name] = originalValue;
+			// Restore methods from 'super_' prefixed methods and delete them
+			Object.getOwnPropertyNames(targetPrototype).forEach((name) => {
+				if (name.startsWith('super_')) {
+					const originalName = name.substring(6); // Remove 'super_' prefix
+					if (targetPrototype[name] !== undefined) {
+						targetPrototype[originalName] = targetPrototype[name];
+					} else {
+						delete targetPrototype[originalName];
+					}
+					delete targetPrototype[name]; // Delete the 'super_' method
 				}
+			});
 
-				// Remove the 'super_' version if it exists and it's a method
-				if (isMethod && targetPrototype.hasOwnProperty(`super_${name}`)) {
-					delete targetPrototype[`super_${name}`];
-				}
-			}
+			// Restore the original init method
+			targetPrototype.init = originalInit;
 		};
 	}
 
