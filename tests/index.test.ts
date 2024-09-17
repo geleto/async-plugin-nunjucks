@@ -541,4 +541,128 @@ describe('Async env', () => {
 			expect(result2.trim()).to.equal('Active User');
 		});
 	})
+
+	describe.only('Async Functions in Expressions', () => {
+		it.only('should handle async functions in filter expressions', async () => {
+			env.addFilter('uppercase', async (str: string) => {
+				await delay(50);
+				return str.toUpperCase();
+			});//note that this is not declared as async filter with the regular callback method, it just returns a promise
+
+			const context = {
+				async uppercase(str: string) {
+					await delay(50);
+					return str.toUpperCase();
+				}
+			};
+			const template = '{{ "hello" | uppercase }}';
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal('HELLO');
+		});
+
+		it('should handle async functions in if expressions', async () => {
+			const context = {
+				async isAdmin() {
+					await delay(50);
+					return true;
+				}
+			};
+			const template = '{{ "Admin" if isAdmin() else "User" }}';
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal('Admin');
+		});
+	});
+
+	describe('Async Functions in Control Structures', () => {
+		it('should handle async functions in for loops', async () => {
+			const context = {
+				async getItems() {
+					await delay(50);
+					return ['a', 'b', 'c'];
+				}
+			};
+			const template = '{% for item in getItems() %}{{ item }}{% endfor %}';
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal('abc');
+		});
+
+		it('should handle async functions in set statements', async () => {
+			const context = {
+				async getValue() {
+					await delay(50);
+					return 42;
+				}
+			};
+			const template = '{% set x = getValue() %}{{ x }}';
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal('42');
+		});
+	});
+
+	describe('Async Functions in Template Structure', () => {
+		it('should handle async functions in macro calls', async () => {
+			const context = {
+				async fetchTitle(id: number) {
+					await delay(50);
+					return id === 1 ? 'Hello' : 'World';
+				}
+			};
+			const template = `
+			{% macro header(id) %}
+			  <h1>{{ fetchTitle(id) }}</h1>
+			{% endmacro %}
+			{{ header(1) }}
+			{{ header(2) }}
+		  `;
+			const result = await env.renderStringAsync(template, context);
+			expect(result.replace(/\s+/g, ' ').trim()).to.equal('<h1>Hello</h1> <h1>World</h1>');
+		});
+
+		it('should handle async functions in include statements', async () => {
+			// Note: This test assumes that AsyncEnvironment supports async getTemplate
+			// If it doesn't, this test would need to be adjusted or removed
+			const context = {
+				async getTemplate() {
+					await delay(50);
+					return 'Hello, {{ name }}!';
+				},
+				name: 'World'
+			};
+			const template = '{% include getTemplate() %}';
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal('Hello, World!');
+		});
+	});
+
+	describe('Complex Async Scenarios', () => {
+		it('should handle async functions returning complex objects', async () => {
+			const context = {
+				async getUser() {
+					await delay(50);
+					return { name: 'John', roles: ['admin', 'user'] };
+				}
+			};
+			const template = '{{ getUser().name }} is {{ getUser().roles[0] }}';
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal('John is admin');
+		});
+
+		it('should handle error propagation in async calls', async () => {
+			const context = {
+				async errorFunc() {
+					await delay(50);
+					throw new Error('Async error');
+				}
+			};
+			const template = '{{ errorFunc() }}';
+
+			try {
+				await env.renderStringAsync(template, context);
+				expect.fail('Expected an error to be thrown');
+			} catch (error) {
+				expect(error).to.be.an('error');
+				expect((error as any).message).to.equal('Async error');
+			}
+		});
+	});
 });
