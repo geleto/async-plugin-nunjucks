@@ -69,7 +69,19 @@ describe('Async env', () => {
 		expect(result).to.equal('User: John Doe');
 	});
 
-	//should correctly resolve a member async function in output (@todo - see if there is an unneeded await for the function name)
+	// Test for handling async function with missing data
+	it('should handle async functions that return null or undefined', async () => {
+		const context = {
+			async fetchUser(id: number) {
+				await delay(50);
+				return null;  // Simulate no user found
+			}
+		};
+
+		const template = '{% set user = fetchUser(1) %}User: {% if user %}{{ user.name }}{% else %}Not found{% endif %}';
+		const result = await env.renderStringAsync(template, context);
+		expect(result).to.equal('User: Not found');
+	});
 
 	it('should correctly resolve an async function with set', async () => {
 		const context = {
@@ -185,18 +197,130 @@ describe('Async env', () => {
 		`);
 	});
 
-	// Test for handling async function with missing data
-	it('should handle async functions that return null or undefined', async () => {
+	it('should handle async functions inside a simple for loop', async () => {
 		const context = {
-			async fetchUser(id: number) {
+			items: [1, 2, 3],
+			async getData(id: number) {
 				await delay(50);
-				return null;  // Simulate no user found
+				return `Item ${id}`;
 			}
 		};
 
-		const template = '{% set user = fetchUser(1) %}User: {% if user %}{{ user.name }}{% else %}Not found{% endif %}';
+		const template = `
+        {%- for item in items %}
+          - {{ getData(item) }}
+        {%- endfor %}
+        `;
+
 		const result = await env.renderStringAsync(template, context);
-		expect(result).to.equal('User: Not found');
+		expect(result).to.equal(`
+          - Item 1
+          - Item 2
+          - Item 3
+        `);
+	});
+
+	it('should handle async functions with loop.index', async () => {
+		const context = {
+			items: ['a', 'b', 'c'],
+			async transform(item: string, index: number) {
+				await delay(50);
+				return `${item.toUpperCase()}-${index}`;
+			}
+		};
+
+		const template = `
+        {%- for item in items %}
+          {{ transform(item, loop.index) }}
+        {%- endfor %}
+        `;
+
+		const result = await env.renderStringAsync(template, context);
+		expect(result).to.equal(`
+          A-1
+          B-2
+          C-3
+        `);
+	});
+
+	it('should handle nested for loops with async functions', async () => {
+		const context = {
+			users: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }],
+			async getPosts(userId: number) {
+				await delay(50);
+				return [`Post 1 by User ${userId}`, `Post 2 by User ${userId}`];
+			}
+		};
+
+		const template = `
+        {%- for user in users %}
+          {{ user.name }}:
+          {%- for post in getPosts(user.id) %}
+            - {{ post }}
+          {%- endfor %}
+        {%- endfor %}
+        `;
+
+		const result = await env.renderStringAsync(template, context);
+		expect(result).to.equal(`
+          Alice:
+            - Post 1 by User 1
+            - Post 2 by User 1
+          Bob:
+            - Post 1 by User 2
+            - Post 2 by User 2
+        `);
+	});
+
+	it('should handle async functions in for...in...async loops', async () => {
+		const context = {
+			async getUsers() {
+				await delay(50);
+				return [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }];
+			},
+			async getRole(userId: number) {
+				await delay(30);
+				return userId === 1 ? 'Admin' : 'User';
+			}
+		};
+
+		const template = `
+        {%- for user in getUsers() %}
+          {{ user.name }}: {{ getRole(user.id) }}
+        {%- endfor %}
+        `;
+
+		const result = await env.renderStringAsync(template, context);
+		expect(result).to.equal(`
+          Alice: Admin
+          Bob: User
+        `);
+	});
+
+	it('should handle async functions with loop variables', async () => {
+		const context = {
+			items: ['a', 'b', 'c'],
+			async processItem(item: string, index: number, first: boolean, last: boolean) {
+				await delay(50);
+				let result = `${item.toUpperCase()}-${index}`;
+				if (first) result += ' (First)';
+				if (last) result += ' (Last)';
+				return result;
+			}
+		};
+
+		const template = `
+        {%- for item in items %}
+          {{ processItem(item, loop.index, loop.first, loop.last) }}
+        {%- endfor %}
+        `;
+
+		const result = await env.renderStringAsync(template, context);
+		expect(result).to.equal(`
+          A-1 (First)
+          B-2
+          C-3 (Last)
+        `);
 	});
 
 	it('should handle async function in if condition', async () => {
