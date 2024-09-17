@@ -125,23 +125,23 @@ describe('Async env', () => {
 		const context = {
 			ids: [1, 2, 3],
 			async fetchData(id: number) {
-				await delay(50);
+				await delay(50 - 2 * id);
 				return `Data for ID ${id}`;
 			}
 		};
 
 		const template = `
-		{% for id in ids %}
+		{%- for id in ids %}
 		  - {{ fetchData(id) }}
-		{% endfor %}
+		{%- endfor %}
 		`;
 
 		const result = await env.renderStringAsync(template, context);
-		expect(result.trim()).to.equal(`
+		expect(result).to.equal(`
 		  - Data for ID 1
 		  - Data for ID 2
 		  - Data for ID 3
-		`.trim());
+		`);
 	});
 
 	it('should correctly resolve async functions with dependent arguments inside a for loop', async () => {
@@ -168,28 +168,28 @@ describe('Async env', () => {
 		};
 
 		const template = `
-		{% set user = fetchUser(1) %}
+		{%- set user = fetchUser(1) %}
 		User: {{ user.name }}
 		Posts:
-		{% for post in fetchUserPosts(user.id) %}
+		{%- for post in fetchUserPosts(user.id) %}
 		  - {{ post.title }}: {{ post.content }}
-		{% endfor %}
+		{%- endfor %}
 		`;
 
 		const result = await env.renderStringAsync(template, context);
-		expect(result.trim()).to.equal(`
+		expect(result).to.equal(`
 		User: John Doe
 		Posts:
 		  - First post: Hello world!
 		  - Second post: Async is awesome!
-		`.trim());
+		`);
 	});
 
 	// Test for handling async function with missing data
 	it('should handle async functions that return null or undefined', async () => {
 		const context = {
 			async fetchUser(id: number) {
-				await delay(100);
+				await delay(50);
 				return null;  // Simulate no user found
 			}
 		};
