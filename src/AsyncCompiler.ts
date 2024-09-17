@@ -9,6 +9,7 @@ var useAsync = true;
 //This would not have been necessary if nunjucks allowed to override the compiler class
 export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	insideAsyncDepth = 0;
+	bufferStack: string[] = [];
 	_emit(code: string) {
 		if (useAsync) {
 			const replaces = [
@@ -37,6 +38,9 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	//wrap await calls in this, maybe we should only env.startAwait()/endAwait() the async blocks
 	emitAwaitBegin() {
 		if (useAsync) {
+			//if (this.insideAsyncDepth === 0) {
+			//	this.emitAsyncValueBegin();
+			//}
 			this._emit('(await ');
 		}
 	}
@@ -44,6 +48,9 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAwaitEnd() {
 		if (useAsync) {
 			this._emit(')');
+			//if (this.insideAsyncDepth === 1) {
+			//	this.emitAsyncValueEnd();
+			//}
 		}
 	}
 
@@ -128,6 +135,41 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			}
 		}
 	}
+
+	emitBufferBlockBegin() {
+		if (useAsync) {
+			// Start the async closure
+			this.emitAsyncBlockBegin();
+
+			// Push the current buffer onto the stack
+			this.bufferStack.push(this.buffer);
+
+			// Create a new buffer array for the nested block
+			const newBuffer = this._tmpid();
+
+			// Initialize the new buffer and its index inside the async closure
+			this._emitLine(`var ${newBuffer} = [];`);
+			this._emitLine(`var ${newBuffer}_index = 0;`);
+
+			// Append the new buffer to the parent buffer
+			this._emitLine(`${this.buffer}[${this.buffer}_index++] = ${newBuffer};`);
+
+			// Update the buffer reference
+			this.buffer = newBuffer;
+			// No need to update bufferIndex; we'll use `${this.buffer}_index` when needed
+		}
+	}
+
+	emitBufferBlockEnd() {
+		if (useAsync) {
+			// End the async closure
+			this.emitAsyncBlockEnd();
+
+			// Restore the previous buffer from the stack
+			this.buffer = this.bufferStack.pop() as string;
+		}
+	}
+
 
 	compileOutput(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame) {
 		const children = node.children as nunjucks.nodes.Node[];
@@ -318,5 +360,11 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		if (useAsync) {
 			this.emitAsyncValueEnd();
 		}
+	}
+
+	compileFor(node: nunjucks.nodes.For, frame: nunjucks.runtime.Frame) {
+		this.emitBufferBlockBegin();
+		(this as any).super_compileFor(node, frame);
+		this.emitBufferBlockEnd();
 	}
 }
