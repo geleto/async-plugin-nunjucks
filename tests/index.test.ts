@@ -542,8 +542,8 @@ describe('Async env', () => {
 		});
 	})
 
-	describe.only('Async Functions in Expressions', () => {
-		it.only('should handle async functions in filter expressions', async () => {
+	describe('Async Functions in Expressions', () => {
+		it('should handle async functions in filter expressions', async () => {
 			env.addFilter('uppercase', async (str: string) => {
 				await delay(50);
 				return str.toUpperCase();

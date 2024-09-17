@@ -373,4 +373,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		(this as any).super_compileIf(node, frame);
 		this.emitBufferBlockEnd();
 	}
+
+	compileFilter(node: nunjucks.nodes.Filter, frame: nunjucks.runtime.Frame) {
+		this.emitAwaitBegin();
+		(this as any).super_compileFilter(node, frame);
+		this.emitAwaitEnd();
+	}
 }
