@@ -109,16 +109,16 @@ describe('Async env', () => {
 		};
 
 		const template = `
-		{% set user = fetchUser(1) %}
+		{%- set user = fetchUser(1) %}
 		User: {{ user.name }}
 		First title: {{ fetchUserPostsFirstTitle(user.id) }}
 		`;
 
 		const result = await env.renderStringAsync(template, context);
-		expect(result.trim()).to.equal(`
+		expect(result).to.equal(`
 		User: John Doe
 		First title: First post
-		`.trim());
+		`);
 	});
 
 	it('should correctly handle async functions inside a for loop', async () => {
@@ -237,30 +237,25 @@ describe('Async env', () => {
 		};
 
 		const template = `
-        {% if getUserRole(1) == "admin" %}
-            Admin user
-        {% elif getUserRole(2) == "moderator" %}
-            Moderator user
-        {% else %}
-            Regular user
-        {% endif %}
-        `;
+        {%- if getUserRole(1) == "admin" -%}Admin user
+        {%- elif getUserRole(2) == "moderator" -%}Moderator user
+        {%- else -%}Regular user
+        {%- endif -%}`;
 
 		const result = await env.renderStringAsync(template, context);
-		expect(result.trim()).to.equal('Admin user');
+		expect(result).to.equal('Admin user');
 
 		const template2 = `
-        {% if getUserRole(3) == "admin" %}
+        {%- if getUserRole(3) == "admin" -%}
             Admin user
-        {% elif getUserRole(2) == "moderator" %}
+        {%- elif getUserRole(2) == "moderator" -%}
             Moderator user
-        {% else %}
+        {%- else -%}
             Regular user
-        {% endif %}
-        `;
+        {%- endif -%}`;
 
 		const result2 = await env.renderStringAsync(template2, context);
-		expect(result2.trim()).to.equal('Moderator user');
+		expect(result2).to.equal('Moderator user');
 	});
 
 	it('should handle async functions inside if blocks', async () => {
@@ -276,26 +271,21 @@ describe('Async env', () => {
 		};
 
 		const template = `
-        {% if isUserAdmin(1) %}
-            Hello, Admin {{ getUserName(1) }}!
-        {% else %}
-            Hello, User {{ getUserName(2) }}!
-        {% endif %}
+        {%- if isUserAdmin(1) -%}Hello, Admin {{ getUserName(1) }}!
+        {%- else -%}Hello, User {{ getUserName(2) }}!
+        {%- endif -%}
         `;
 
 		const result = await env.renderStringAsync(template, context);
-		expect(result.trim()).to.equal('Hello, Admin John!');
+		expect(result).to.equal('Hello, Admin John!');
 
 		const template2 = `
-        {% if isUserAdmin(2) %}
-            Hello, Admin {{ getUserName(2) }}!
-        {% else %}
-            Hello, User {{ getUserName(2) }}!
-        {% endif %}
-        `;
+        {%- if isUserAdmin(2) -%}Hello, Admin {{ getUserName(2) }}!
+        {%- else -%}Hello, User {{ getUserName(2) }}!
+        {%- endif -%}`;
 
 		const result2 = await env.renderStringAsync(template2, context);
-		expect(result2.trim()).to.equal('Hello, User Jane!');
+		expect(result2).to.equal('Hello, User Jane!');
 	});
 
 	it('should handle nested if statements with async functions', async () => {
@@ -311,90 +301,27 @@ describe('Async env', () => {
 		};
 
 		const template = `
-        {% if isUserActive(1) %}
-            {% if getUserRole(1) == "admin" %}
-                Active Admin
-            {% else %}
-                Active User
-            {% endif %}
-        {% else %}
-            Inactive User
-        {% endif %}
+        {%- if isUserActive(1) -%}
+            {%- if getUserRole(1) == "admin" -%}Active Admin
+            {%- else -%}Active User
+            {%- endif -%}
+        {%- else -%}Inactive User
+        {%- endif -%}
         `;
 
 		const result = await env.renderStringAsync(template, context);
-		expect(result.trim()).to.equal('Inactive User');
+		expect(result).to.equal('Inactive User');
 
 		const template2 = `
-        {% if isUserActive(2) %}
-            {% if getUserRole(2) == "admin" %}
-                Active Admin
-            {% else %}
-                Active User
-            {% endif %}
-        {% else %}
-            Inactive User
-        {% endif %}
+        {%- if isUserActive(2) -%}
+            {%- if getUserRole(2) == "admin" -%}Active Admin
+            {%- else -%}Active User
+            {%- endif -%}
+        {%- else -%}Inactive User
+        {%- endif -%}
         `;
 
 		const result2 = await env.renderStringAsync(template2, context);
 		expect(result2.trim()).to.equal('Active User');
 	});
 });
-
-/*describe('await filter tests', () => {
-
-	let env: nunjucks.Environment;
-
-	beforeEach(() => {
-		env = new nunjucks.Environment();
-		// Implement 'await' filter for resolving promises in templates
-		env.addFilter('await', function (promise: Promise<any>, callback: (err: Error | null, result?: any) => void) {
-			promise.then(result => {
-				callback(null, result);
-			}).catch(err => {
-				callback(err);
-			});
-		}, true);
-	});
-
-	it('should handle custom async filter with global async function', (done) => {
-		// Add global async function
-		env.addGlobal('fetchUser', async (id: number) => {
-			// Simulate async operation
-			await new Promise(resolve => setTimeout(resolve, 10));
-			return { id, name: `User ${id}` };
-		});
-
-		const template = '{% set user = fetchUser(123) | await %}Hello, {{ user.name }}!';
-
-		env.renderString(template, {}, (err, result) => {
-			if (err) return done(err);
-			expect(result).to.equal('Hello, User 123!');
-			done();
-		});
-	});
-
-	it('should handle asyncEach with records of promises', (done) => {
-		// Add global function to fetch records
-		env.addGlobal('getRecords', () => {
-			// Return an array of promises (each record is a promise)
-			return [
-				new Promise(resolve => setTimeout(() => resolve('Record 1'), 10)),
-				new Promise(resolve => setTimeout(() => resolve('Record 2'), 20)),
-				new Promise(resolve => setTimeout(() => resolve('Record 3'), 15))
-			];
-		});
-
-		const template = `{%- set records = getRecords() -%}
-		{%- asyncEach rec in records -%}
-		{{ rec | await }}{% if not loop.last %}\n{% endif %}
-		{%- endeach %}`;
-
-		env.renderString(template, {}, (err, result) => {
-			if (err) return done(err);
-			expect((result as string).trim()).to.equal('Record 1\nRecord 2\nRecord 3');
-			done();
-		});
-	});
-});*/
