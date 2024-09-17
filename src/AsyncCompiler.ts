@@ -367,4 +367,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		(this as any).super_compileFor(node, frame);
 		this.emitBufferBlockEnd();
 	}
+
+	compileIf(node: nunjucks.nodes.If, frame: nunjucks.runtime.Frame, async: boolean) {
+		this.emitBufferBlockBegin();
+		(this as any).super_compileIf(node, frame);
+		this.emitBufferBlockEnd();
+	}
 }
