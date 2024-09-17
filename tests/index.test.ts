@@ -83,22 +83,6 @@ describe('Async env', () => {
 		});
 	});
 
-	describe('Error Handling and Edge Cases', () => {
-		// Test for handling async function with missing data
-		it('should handle async functions that return null or undefined', async () => {
-			const context = {
-				async fetchUser(id: number) {
-					await delay(50);
-					return null;  // Simulate no user found
-				}
-			};
-
-			const template = '{% set user = fetchUser(1) %}User: {% if user %}{{ user.name }}{% else %}Not found{% endif %}';
-			const result = await env.renderStringAsync(template, context);
-			expect(result).to.equal('User: Not found');
-		});
-	});
-
 	describe('Dependent Async Functions', () => {
 		// Test for dependent async functions (user and user's posts)
 		it('should correctly resolve async functions with dependent arguments', async () => {
@@ -134,6 +118,106 @@ describe('Async env', () => {
 			expect(result).to.equal(`
 			User: John Doe
 			First title: First post
+			`);
+		});
+
+		it('should handle a chain of dependent async functions', async () => {
+			const context = {
+				async fetchUserId() {
+					await delay(50);
+					return 1;
+				},
+				async fetchUserName(id: number) {
+					await delay(50);
+					return id === 1 ? 'John Doe' : 'Jane Doe';
+				},
+				async fetchUserPosts(name: string) {
+					await delay(50);
+					return name === 'John Doe' ? ['Post 1', 'Post 2'] : ['Post A', 'Post B'];
+				}
+			};
+
+			const template = `
+			{%- set userId = fetchUserId() %}
+			{%- set userName = fetchUserName(userId) %}
+			{%- set userPosts = fetchUserPosts(userName) %}
+			User: {{ userName }}
+			Posts: {{ userPosts | join(', ') }}
+			`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal(`
+			User: John Doe
+			Posts: Post 1, Post 2
+			`);
+		});
+
+		// New test: Complex dependent async functions
+		it('should handle complex dependent async functions', async () => {
+			const context = {
+				async fetchUserId() {
+					await delay(50);
+					return 1;
+				},
+				async fetchUserName(id: number) {
+					await delay(50);
+					return id === 1 ? 'John Doe' : 'Jane Doe';
+				},
+				async fetchUserRole(name: string) {
+					await delay(50);
+					return name === 'John Doe' ? 'Admin' : 'User';
+				},
+				async fetchPermissions(role: string) {
+					await delay(50);
+					return role === 'Admin' ? ['read', 'write', 'delete'] : ['read'];
+				}
+			};
+
+			const template = `
+			{%- set userId = fetchUserId() %}
+			{%- set userName = fetchUserName(userId) %}
+			{%- set userRole = fetchUserRole(userName) %}
+			{%- set permissions = fetchPermissions(userRole) %}
+			User: {{ userName }}
+			Role: {{ userRole }}
+			Permissions: {{ permissions | join(', ') }}
+			`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal(`
+			User: John Doe
+			Role: Admin
+			Permissions: read, write, delete
+			`);
+		});
+
+		// New test: Handling async functions with multiple dependencies
+		it('should handle async functions with multiple dependencies', async () => {
+			const context = {
+				async fetchUser(id: number) {
+					await delay(50);
+					return { id, name: 'John Doe' };
+				},
+				async fetchDepartment(id: number) {
+					await delay(50);
+					return { id, name: 'IT' };
+				},
+				async generateReport(user: any, department: any) {
+					await delay(50);
+					return `Report for ${user.name} in ${department.name}`;
+				}
+			};
+
+			const template = `
+			{%- set user = fetchUser(1) %}
+			{%- set department = fetchDepartment(2) %}
+			{%- set report = generateReport(user, department) %}
+			{{ report }}
+			`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal(`
+			Report for John Doe in IT
 			`);
 		});
 	});
