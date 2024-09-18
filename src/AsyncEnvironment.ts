@@ -1,6 +1,7 @@
 import * as nunjucks from 'nunjucks';
 import { ASTWalker } from './ASTWalker';
 import { AsyncCompiler } from './AsyncCompiler';
+import { asyncRuntime } from './AsyncRuntime';
 
 
 //A dummy extension, only async environments have it, used to identify them
@@ -86,9 +87,11 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	private monkeyPatch() {
 		const unpatchParseAsRoot = this.monkeyPatchParseAsRoot();
 		const unpatchClass = this.monkeyPatchClass(AsyncCompiler, nunjucks.compiler.Compiler);
+		const unpatchRuntime = this.monkeyPatchRuntime();
 		return () => {
 			unpatchParseAsRoot();
 			unpatchClass();
+			unpatchRuntime();
 		};
 	}
 
@@ -172,13 +175,38 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		};
 	}
 
+	private monkeyPatchRuntime() {
+		//for all properties in both asyncRuntime and nunjucks.runtime
+		//prepend the one in nunjucks.runtime with super_
+		for (const key in asyncRuntime) {
+			if ((nunjucks.runtime as any)[key]) {
+				(nunjucks.runtime as any)[`super_${key}`] = (nunjucks.runtime as any)[key];
+			}
+			(nunjucks.runtime as any)[key] = (asyncRuntime as any)[key];
+		}
+		//return undo function that restores all properties that start with super_ in nunjucks.runtime
+		return () => {
+			for (const key in asyncRuntime) {
+				const original = (nunjucks.runtime as any)[`super_${key}`];
+				if (original) {
+					(nunjucks.runtime as any)[key] = original;
+					delete (nunjucks.runtime as any)[`super_${key}`];
+				} else {
+					delete (nunjucks.runtime as any)[key];
+				}
+			}
+		};
+	}
 
 	flattenNestedArray(arr: NestedStringArray): string {
 		const result = arr.reduce<string>((acc, item) => {
 			if (Array.isArray(item)) {
 				return acc + this.flattenNestedArray(item);
 			}
-			return acc + item;
+			if (typeof item === 'function') {
+				return ((item as any)(acc) ?? '');
+			}
+			return acc + (item ?? '');
 		}, '');
 		return result;
 	}

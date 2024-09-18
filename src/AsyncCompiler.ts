@@ -20,7 +20,11 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				{
 					find: `${this.buffer} += `,
 					replace: `${this.buffer}[${this.buffer}_index++] = `
-				}
+				},
+				{
+					find: 'new SafeString',
+					replace: `runtime.asyncSafeString`
+				},
 			];
 
 			for (const replacement of replaces) {
