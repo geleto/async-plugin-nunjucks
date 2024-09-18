@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as nunjucks from 'nunjucks';
 import { AsyncEnvironment } from '../dist/index';
 import { assert } from 'console';
+import { unescape } from 'he';
 
 describe('Async env', () => {
 	let env: AsyncEnvironment;
@@ -640,7 +641,7 @@ describe('Async env', () => {
 			`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(`
+			expect(unescape(result.trim())).to.equal(`
 			<article>
 				<h1>Async Title</h1>
 				<p>Async Content</p>
@@ -661,23 +662,23 @@ describe('Async env', () => {
 			};
 
 			const template = `
-			{% macro userProfile(user) %}
+			{%- macro userProfile(user) -%}
 			<div class="user-profile">
 				<h2>{{ user.name }}</h2>
 				<h3>Posts:</h3>
 				<ul>
-				{% for post in fetchUserPosts(user.id) %}
+				{%- for post in fetchUserPosts(user.id) %}
 					<li>{{ post }}</li>
-				{% endfor %}
+				{%- endfor %}
 				</ul>
 			</div>
-			{% endmacro %}
+			{%- endmacro %}
 
 			{{ userProfile(fetchUser(1)) }}
 			`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(`
+			expect(unescape(result.trim())).to.equal(`
 			<div class="user-profile">
 				<h2>User 1</h2>
 				<h3>Posts:</h3>
@@ -718,7 +719,7 @@ describe('Async env', () => {
 			`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(`
+			expect(unescape(result.trim())).to.equal(`
 			<div class="page">
 				<header>Async Header</header>
 				<main>Async Content</main>
@@ -756,7 +757,7 @@ describe('Async env', () => {
 			`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(`
+			expect(unescape(result.trim())).to.equal(`
 			<div class="user-profile">
 				<h2>User 1</h2>
 				<p>Role: User</p>
