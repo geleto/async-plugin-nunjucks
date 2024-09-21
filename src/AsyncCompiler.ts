@@ -8,7 +8,6 @@ var useAsync = true;
 //instead of super().someFunction() use super_someFunction()
 //This would not have been necessary if nunjucks allowed to override the compiler class
 export class AsyncCompiler extends nunjucks.compiler.Compiler {
-	insideAsyncDepth = 0;
 	bufferStack: string[] = [];
 	_emit(code: string) {
 		if (useAsync) {
@@ -42,9 +41,6 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	//wrap await calls in this, maybe we should only env.startAwait()/endAwait() the async blocks
 	emitAwaitBegin() {
 		if (useAsync) {
-			//if (this.insideAsyncDepth === 0) {
-			//	this.emitAsyncValueBegin();
-			//}
 			this._emit('(await ');
 		}
 	}
@@ -52,78 +48,45 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAwaitEnd() {
 		if (useAsync) {
 			this._emit(')');
-			//if (this.insideAsyncDepth === 1) {
-			//	this.emitAsyncValueEnd();
-			//}
 		}
 	}
 
 	//an async block that does not have a value should be wrapped in this
 	emitAsyncBlockBegin() {
 		if (useAsync) {
-			this.insideAsyncDepth++;
-			if (this.insideAsyncDepth === 1) {
-				this._emit('(async ()=>{ try');
-				this._emitLine('{env.startAwait();');
-			}
+			this._emit('(async ()=>{');
 		}
 	}
 
 	emitAsyncBlockEnd() {
 		if (useAsync) {
-			this.insideAsyncDepth--;
-			if (this.insideAsyncDepth === 0) {
-				this._emitLine('}');
-				this._emitLine('finally{');
-				this._emitLine('env.endAwait()');
-				this._emitLine('}})();');
-			}
+			this._emitLine('})()');
+			this._emitLine('.catch(e =>{cb(runtime.handleError(e, lineno, colno));})');
+			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
 
 	emitAsyncValueBegin() {
 		if (useAsync) {
-			if (useAsync) {
-				this.insideAsyncDepth++;
-				if (this.insideAsyncDepth === 1) {
-					this._emitLine('(async ()=>{ try');
-					this._emitLine('{env.startAwait();');
-					this._emit('return ');
-				}
-				//else {
-				//	this._emit('(await ');
-				//}
-			}
+			this._emitLine('(async ()=>{');
+			this._emit('return ');
 		}
 	}
 
 	emitAsyncValueEnd() {
 		if (useAsync) {
-			this.insideAsyncDepth--;
-			if (this.insideAsyncDepth === 0) {
-				this._emitLine('}');
-				this._emitLine('finally{');
-				this._emitLine('env.endAwait()');
-				this._emitLine('}})()');
-			}
-			//else {
-			//	this._emit(')');
-			//}
+			this._emitLine('})()');
+			this._emitLine('.catch(e =>{cb(runtime.handleError(e, lineno, colno));})');
+			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
 
 	emitAsyncAddToBufferBegin() {
 		if (useAsync) {
-			this.insideAsyncDepth++;
-			if (this.insideAsyncDepth === 1) {
-				this._emitLine('(async ()=>{');
-				this._emitLine('env.startAwait();');
-				this._emitLine(`var index = ${this.buffer}_index++;`);
-				this._emit(`${this.buffer}[index] = `);
-			}
-			else {
-				this._emit(`${this.buffer}[${this.buffer}_index++] = `);
-			}
+			this._emitLine('(async ()=>{');
+			this._emitLine('env.startAwait();');
+			this._emitLine(`var index = ${this.buffer}_index++;`);
+			this._emit(`${this.buffer}[index] = `);
 		}
 		else {
 			this._emit(`${this.buffer} += `);
@@ -132,11 +95,9 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 	emitAddToBufferEnd() {
 		if (useAsync) {
-			this.insideAsyncDepth--;
-			if (this.insideAsyncDepth === 0) {
-				this._emitLine('env.endAwait();');
-				this._emitLine('})();');
-			}
+			this._emitLine('})()');
+			this._emitLine('.catch(e =>{cb(runtime.handleError(e, lineno, colno));})');
+			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
 
