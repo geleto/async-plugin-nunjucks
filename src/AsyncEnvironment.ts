@@ -17,8 +17,13 @@ type NestedStringArray = (string | NestedStringArray)[];
 export class AsyncEnvironment extends nunjucks.Environment {
 	private static asyncExtension = new AsyncExtension();
 	private static astWalker = new ASTWalker();
-	private activeAwaits = 0;
 	private static monkeyPatched = false;
+
+	//TODO: this in separate object in the template
+	//a new parameter to template.render
+	//it will count activeAwaits, store async errors, etc...
+	private asyncErrors: Error[] = [];
+	private activeAwaits = 0;//@todo - AsyncEnvironment must be stateless
 	private completionResolver: (() => void) | null = null;
 
 	constructor(loader?: nunjucks.ILoaderAny | nunjucks.ILoaderAny[], opts?: nunjucks.ConfigureOptions) {
@@ -27,61 +32,53 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		this.addExtension('AsyncExtension', AsyncEnvironment.asyncExtension);
 	}
 
-	// Asynchronously render a template from a file with AST modification and caching
-	async renderAsync(templateName: string, context: object): Promise<string> {
+	private async asyncRender(template: string, context: object, namedTemplate: boolean): Promise<string> {
 		let undoPatch: (() => void) | undefined;
 		if (!AsyncEnvironment.monkeyPatched) {
 			AsyncEnvironment.monkeyPatched = true;
 			undoPatch = this.monkeyPatch();
 		}
-
 		try {
+			this.asyncErrors = [];
 			const res = await new Promise<NestedStringArray>((resolve, reject) => {
-				this.render(templateName, context, (err, res) => {
+				let callback = (err: Error | null, res: string | null) => {
 					if (err || res === null) {
 						reject(err ?? new Error('No render result'));
 					} else {
-						resolve(res as unknown as NestedStringArray);
+						resolve(res as any as NestedStringArray);
 					}
-				});
-			});
+				}
 
+				if (namedTemplate)
+					this.render(template, context, callback);
+				else
+					this.renderString(template, context, callback);
+			});
 			await this.waitAll();
 			return this.flattenNestedArray(res);
-		} finally {
+		}
+		catch (err) {
+			//non-async error
+			await this.waitAll();
+			throw err;
+		}
+		finally {
 			if (undoPatch) {
 				undoPatch();
 				AsyncEnvironment.monkeyPatched = false;
+			}
+			if (this.asyncErrors.length > 0) {
+				throw this.asyncErrors[0];
 			}
 		}
 	}
 
+	async renderAsync(templateName: string, context: object): Promise<string> {
+		return this.asyncRender(templateName, context, true);
+	}
+
 	async renderStringAsync(templateString: string, context: object): Promise<string> {
-		let undoPatch: (() => void) | undefined;
-		if (!AsyncEnvironment.monkeyPatched) {
-			AsyncEnvironment.monkeyPatched = true;
-			undoPatch = this.monkeyPatch();
-		}
-
-		try {
-			const res = await new Promise<NestedStringArray>((resolve, reject) => {
-				this.renderString(templateString, context, (err, res) => {
-					if (err || res === null) {
-						reject(err ?? new Error('No render result'));
-					} else {
-						resolve(res as unknown as NestedStringArray);
-					}
-				});
-			});
-
-			await this.waitAll();
-			return this.flattenNestedArray(res);
-		} finally {
-			if (undoPatch) {
-				undoPatch();
-				AsyncEnvironment.monkeyPatched = false;
-			}
-		}
+		return this.asyncRender(templateString, context, false);
 	}
 
 	private monkeyPatch() {
@@ -215,12 +212,17 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		this.activeAwaits++;
 	}
 
+	//this should always be called from the try 'finally' block
 	endAwait(): void {
 		this.activeAwaits--;
 		if (this.activeAwaits === 0 && this.completionResolver) {
 			this.completionResolver();
 			this.completionResolver = null;
 		}
+	}
+
+	private onAsyncError(error: Error, lineno: number, colno: number) {
+		this.asyncErrors.push(error);
 	}
 
 	async waitAll(): Promise<void> {
