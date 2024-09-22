@@ -55,13 +55,14 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAsyncBlockBegin() {
 		if (useAsync) {
 			this._emit('(async ()=>{');
+			this._emit('env.startAwait();');
 		}
 	}
 
 	emitAsyncBlockEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this._emitLine('.catch(e =>{cb(runtime.handleError(e, lineno, colno));})');
+			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
 			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
@@ -69,6 +70,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAsyncValueBegin() {
 		if (useAsync) {
 			this._emitLine('(async ()=>{');
+			this._emitLine('env.startAwait();');
 			this._emit('return ');
 		}
 	}
@@ -76,7 +78,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAsyncValueEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this._emitLine('.catch(e =>{cb(runtime.handleError(e, lineno, colno));})');
+			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
 			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
@@ -96,7 +98,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAddToBufferEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this._emitLine('.catch(e =>{cb(runtime.handleError(e, lineno, colno));})');
+			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
 			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
