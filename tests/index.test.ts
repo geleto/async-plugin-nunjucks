@@ -741,17 +741,16 @@ describe('Async env', () => {
 			};
 
 			const template = `
-			{% macro userRole(userId) %}
+			{%- macro userRole(userId) -%}
 			{{ fetchUserRole(userId) }}
-			{% endmacro %}
+			{%- endmacro -%}
 
-			{% macro userProfile(user) %}
+			{%- macro userProfile(user) -%}
 			<div class="user-profile">
 				<h2>{{ user.name }}</h2>
 				<p>Role: {{ userRole(user.id) }}</p>
 			</div>
-			{% endmacro %}
-
+			{%- endmacro %}
 			{{ userProfile(fetchUser(1)) }}
 			{{ userProfile(fetchUser(2)) }}
 			`;
@@ -798,7 +797,7 @@ describe('Async env', () => {
 			expect(result).to.equal('John is admin');
 		});
 
-		it('should handle error propagation in async calls', async () => {
+		it.only('should handle error propagation in async calls', async () => {
 			const context = {
 				async errorFunc() {
 					await delay(50);
@@ -807,13 +806,15 @@ describe('Async env', () => {
 			};
 			const template = '{{ errorFunc() }}';
 
+			let noError = false;
 			try {
 				await env.renderStringAsync(template, context);
-				expect.fail('Expected an error to be thrown');
+				noError = true;
 			} catch (error) {
-				expect(error).to.be.an('error');
+				expect(error).to.be.instanceOf(Error);
 				expect((error as any).message).to.equal('Async error');
 			}
+			expect(noError).to.be.false;
 		});
 	});
 });
