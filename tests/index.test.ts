@@ -797,7 +797,7 @@ describe('Async env', () => {
 			expect(result).to.equal('John is admin');
 		});
 
-		it.only('should handle error propagation in async calls', async () => {
+		it('should handle error propagation in async calls', async () => {
 			const context = {
 				async errorFunc() {
 					await delay(50);

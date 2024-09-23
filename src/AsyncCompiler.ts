@@ -343,9 +343,99 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	}
 
 	compileFor(node: nunjucks.nodes.For, frame: nunjucks.runtime.Frame) {
-		this.emitBufferBlockBegin();
-		(this as any).super_compileFor(node, frame);
-		this.emitBufferBlockEnd();
+		this.emitBufferBlockBegin();//
+
+		var _this10 = this;
+		// Some of this code is ugly, but it keeps the generated code
+		// as fast as possible. ForAsync also shares some of this, but
+		// not much.
+
+		var i = this._tmpid();
+		var len = this._tmpid();
+		var arr = this._tmpid();
+		frame = frame.push();
+		this._emitLine('frame = frame.push();');
+		this._emit("var " + arr + " = ");
+		this._compileExpression(node.arr, frame);
+		this._emitLine(';');
+		this._emit("if(" + arr + ") {");
+		this._emitLine(arr + ' = runtime.fromIterator(' + arr + ');');
+
+		// If multiple names are passed, we need to bind them
+		// appropriately
+		if (node.name instanceof nunjucks.nodes.Array) {
+			this._emitLine("var " + i + ";");
+
+			// The object could be an arroy or object. Note that the
+			// body of the loop is duplicated for each condition, but
+			// we are optimizing for speed over size.
+			this._emitLine("if(runtime.isArray(" + arr + ")) {");
+			this._emitLine("var " + len + " = " + arr + ".length;");
+			this._emitLine("for(" + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
+
+			// Bind each declared var
+			node.name.children.forEach(function (child, u) {
+				var tid = _this10._tmpid();
+				_this10._emitLine("var " + tid + " = " + arr + "[" + i + "][" + u + "];");
+				_this10._emitLine("frame.set(\"" + child + "\", " + arr + "[" + i + "][" + u + "]);");
+				frame.set(node.name.children?.[u].value as string, tid);
+			});
+			this._emitLoopBindings(node, arr, i, len);
+			this._withScopedSyntax(function () {
+				_this10.compile(node.body, frame);
+			});
+			this._emitLine('}');
+			this._emitLine('} else {');
+			// Iterate over the key/values of an object
+			var _node$name$children = node.name.children,
+				key = _node$name$children[0],
+				val = _node$name$children[1];
+			var k = this._tmpid();
+			var v = this._tmpid();
+			frame.set(key.value as string, k);
+			frame.set(val.value as string, v);
+			this._emitLine(i + " = -1;");
+			this._emitLine("var " + len + " = runtime.keys(" + arr + ").length;");
+			this._emitLine("for(var " + k + " in " + arr + ") {");
+			this._emitLine(i + "++;");
+			this._emitLine("var " + v + " = " + arr + "[" + k + "];");
+			this._emitLine("frame.set(\"" + key.value + "\", " + k + ");");
+			this._emitLine("frame.set(\"" + val.value + "\", " + v + ");");
+			this._emitLoopBindings(node, arr, i, len);
+			this._withScopedSyntax(function () {
+				_this10.compile(node.body, frame);
+			});
+			this._emitLine('}');
+			this._emitLine('}');
+		} else {
+			// Generate a typical array iteration
+			var _v = this._tmpid();
+			frame.set(node.name.value as string, _v);
+			this._emitLine("var " + len + " = " + arr + ".length;");
+			this._emitLine("for(var " + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
+
+			this.emitAsyncBlockBegin();
+
+			this._emitLine("var " + _v + " = " + arr + "[" + i + "];");
+			this._emitLine("frame.set(\"" + node.name.value + "\", " + _v + ");");
+			this._emitLoopBindings(node, arr, i, len);
+			this._withScopedSyntax(function () {
+				_this10.compile(node.body, frame);
+			});
+
+			this.emitAsyncBlockEnd();
+
+			this._emitLine('}');
+		}
+		this._emitLine('}');
+		if (node.else_) {
+			this._emitLine('if (!' + len + ') {');
+			this.compile(node.else_, frame);
+			this._emitLine('}');
+		}
+		this._emitLine('frame = frame.pop();');
+
+		this.emitBufferBlockEnd();//
 	}
 
 	compileIf(node: nunjucks.nodes.If, frame: nunjucks.runtime.Frame, async: boolean) {
