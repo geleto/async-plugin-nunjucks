@@ -293,7 +293,7 @@ declare module 'nunjucks' {
 			constructor(lineno: number, colno: number, nodes?: Node[]);
 		}
 
-		export class ArrayNode extends NodeList {
+		export class Array extends NodeList {
 			constructor(lineno: number, colno: number, nodes?: Node[]);
 		}
 
