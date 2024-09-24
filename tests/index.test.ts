@@ -534,7 +534,7 @@ describe('Async env', () => {
 			);
 		});
 
-		it.only('should handle nested loops with unpacking and async functions', async () => {
+		it('should handle nested loops with unpacking and async functions', async () => {
 			const context = {
 				departments: {
 					IT: [['John', 'developer'], ['Jane', 'designer']],
