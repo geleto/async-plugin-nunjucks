@@ -440,7 +440,7 @@ describe('Async env', () => {
 			);
 		});
 
-		it.only('should handle object unpacking with async function in loop body', async () => {
+		it('should handle object unpacking with async function in loop body', async () => {
 			const context = {
 				userAges: {
 					John: 30,
@@ -486,15 +486,14 @@ describe('Async env', () => {
 
 			const template = `
 			{%- for name, dept in employees %}
-			  {{ formatEmployee(name, getTitle(dept)) }}
-			{%- endfor %}
-			`;
+				{{ formatEmployee(name, getTitle(dept)) }}
+			{%- endfor %}`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(
-				'John - Engineer\n' +
-				'Jane - Manager\n' +
-				'Bob - Analyst'
+			expect(result).to.equal(`
+				John - Engineer
+				Jane - Manager
+				Bob - Analyst`
 			);
 		});
 
@@ -518,21 +517,20 @@ describe('Async env', () => {
 
 			const template = `
 			{%- for name, role in users %}
-			  {{ name }}:
-			  {%- set permissions = getUserPermissions(role) %}
-			  {%- if 'write' in permissions %}
-				Can write
-			  {%- else %}
-				Cannot write
-			  {%- endif %}
-			{%- endfor %}
-			`;
+				{{ name }} :
+				{%- set permissions = getUserPermissions(role) -%}
+				{%- if 'write' in permissions -%}
+					Can write
+			  	{%- else -%}
+					Cannot write
+				{%- endif -%}
+			{%- endfor %}`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(
-				'John: Can write\n' +
-				'Jane: Cannot write\n' +
-				'Bob: Can write'
+			expect(result).to.equal(`
+				John :Can write
+				Jane :Cannot write
+				Bob :Can write`
 			);
 		});
 

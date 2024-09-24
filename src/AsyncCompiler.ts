@@ -112,10 +112,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		}
 	}
 
-	emitBufferBlockBegin() {
+	emitBufferBlockBegin(argumentNames: string[] = []) {
 		if (useAsync) {
 			// Start the async closure
-			this.emitAsyncBlockBegin();
+			this.emitAsyncBlockBegin(argumentNames);
 
 			// Push the current buffer onto the stack
 			this.bufferStack.push(this.buffer);
@@ -136,10 +136,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		}
 	}
 
-	emitBufferBlockEnd() {
+	emitBufferBlockEnd(argumentNames: string[] = []) {
 		if (useAsync) {
 			// End the async closure
-			this.emitAsyncBlockEnd();
+			this.emitAsyncBlockEnd(argumentNames);
 
 			// Restore the previous buffer from the stack
 			this.buffer = this.bufferStack.pop() as string;
@@ -376,7 +376,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("for(" + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
 
 			this._emitLine('frame = frame.push();');//async
-			this.emitAsyncBlockBegin(['frame', i]);
+			this.emitBufferBlockBegin(['frame', i]);
 
 			// Bind each declared var
 			node.name.children.forEach(function (child, u) {
@@ -391,7 +391,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				_this10.compile(node.body, frame);
 			});
 
-			this.emitAsyncBlockEnd(['frame', i]);
+			this.emitBufferBlockEnd(['frame', i]);
 			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');
@@ -409,7 +409,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("for(var " + k + " in " + arr + ") {");
 
 			this._emitLine('frame = frame.push();');//async
-			this.emitAsyncBlockBegin(['frame', k]);
+			this.emitBufferBlockBegin(['frame', k]);
 
 			this._emitLine(i + "++;");
 			this._emitLine("var " + v + " = " + arr + "[" + k + "];");
@@ -420,7 +420,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				_this10.compile(node.body, frame);
 			});
 
-			this.emitAsyncBlockEnd(['frame', k]);
+			this.emitBufferBlockEnd(['frame', k]);
 			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');
@@ -433,7 +433,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("for(var " + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
 
 			this._emitLine('frame = frame.push();');//async
-			this.emitAsyncBlockBegin(['frame', i]);
+			this.emitBufferBlockBegin(['frame', i]);
 
 			this._emitLine("var " + _v + " = " + arr + "[" + i + "];");
 			this._emitLine("frame.set(\"" + node.name.value + "\", " + _v + ");");
@@ -443,7 +443,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			});
 
 
-			this.emitAsyncBlockEnd(['frame', i]);
+			this.emitBufferBlockEnd(['frame', i]);
 			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');
