@@ -382,7 +382,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			node.name.children.forEach(function (child, u) {
 				var tid = _this10._tmpid();
 				_this10._emitLine("var " + tid + " = " + arr + "[" + i + "][" + u + "];");
-				_this10._emitLine("frame.set(\"" + child + "\", " + arr + "[" + i + "][" + u + "]);");
+				//_this10._emitLine("frame.set(\"" + child + "\", " + arr + "[" + i + "][" + u + "]);");
+				_this10._emitLine("frame.set(\"" + child.value + "\", " + arr + "[" + i + "][" + u + "]);");//fix nunjucks bug
 				frame.set(node.name.children?.[u].value as string, tid);
 			});
 			this._emitLoopBindings(node, arr, i, len);
