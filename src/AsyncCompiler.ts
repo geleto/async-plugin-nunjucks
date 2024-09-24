@@ -53,17 +53,17 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	}
 
 	//an async block that does not have a value should be wrapped in this
-	emitAsyncBlockBegin() {
+	emitAsyncBlockBegin(argumentNames: string[] = []) {
 		if (useAsync) {
-			this._emit('(async ()=>{');
+			this._emit(`(async (${argumentNames.join(',')})=>{`);
 			this._emit('env.startAwait();');
 			this.insideAsyncDepth++;
 		}
 	}
 
-	emitAsyncBlockEnd() {
+	emitAsyncBlockEnd(argumentNames: string[] = []) {
 		if (useAsync) {
-			this._emitLine('})()');
+			this._emitLine(`})(${argumentNames.join(',')})`);
 			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
 			this._emitLine('.finally(()=>{env.endAwait();})');
 			this.insideAsyncDepth--;
@@ -414,7 +414,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("var " + len + " = " + arr + ".length;");
 			this._emitLine("for(var " + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
 
-			this.emitAsyncBlockBegin();
+			this._emitLine('frame = frame.push();');//async
+			this.emitAsyncBlockBegin(['frame']);
 
 			this._emitLine("var " + _v + " = " + arr + "[" + i + "];");
 			this._emitLine("frame.set(\"" + node.name.value + "\", " + _v + ");");
@@ -423,7 +424,9 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				_this10.compile(node.body, frame);
 			});
 
-			this.emitAsyncBlockEnd();
+
+			this.emitAsyncBlockEnd(['frame']);
+			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');
 		}
