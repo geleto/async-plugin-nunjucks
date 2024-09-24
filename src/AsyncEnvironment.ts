@@ -54,12 +54,12 @@ export class AsyncEnvironment extends nunjucks.Environment {
 				else
 					this.renderString(template, context, callback);
 			});
-			await this.waitAll();
+			//await this.waitAll();
 			return this.flattenNestedArray(res);
 		}
 		catch (err) {
 			//non-async error
-			await this.waitAll();
+			//await this.waitAll();
 			throw err;
 		}
 		finally {

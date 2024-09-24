@@ -470,4 +470,65 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		(this as any).super_compileFilter(node, frame);
 		this.emitAwaitEnd();
 	}
+
+	compileRoot(node: nunjucks.nodes.Root, frame: nunjucks.runtime.Frame) {
+		if (frame) {
+			this.fail('compileRoot: root node can\'t have frame');
+		}
+
+		frame = new nunjucks.runtime.Frame();
+
+		this._emitFuncBegin(node, 'root');
+		this._emitLine('var parentTemplate = null;');
+		this._compileChildren(node, frame);
+
+		if (useAsync) {
+			this._emitLine('env.waitAll().then(() => {');
+			this._emitLine('  if(parentTemplate) {');
+			this._emitLine('    parentTemplate.rootRenderFunc(env, context, frame, runtime, cb);');
+			this._emitLine('  } else {');
+			this._emitLine(`    cb(null, ${this.buffer});`);
+			this._emitLine('  }');
+			this._emitLine('}).catch(e => cb(runtime.handleError(e, lineno, colno)));');
+		} else {
+			this._emitLine('if(parentTemplate) {');
+			this._emitLine('  parentTemplate.rootRenderFunc(env, context, frame, runtime, cb);');
+			this._emitLine('} else {');
+			this._emitLine(`  cb(null, ${this.buffer});`);
+			this._emitLine('}');
+		}
+
+		this._emitFuncEnd(true);
+
+		this.inBlock = true;
+
+		const blockNames: string[] = [];
+
+		const blocks = node.findAll(nodes.Block);
+
+		blocks.forEach((block, i) => {
+			const name = block.name.value;
+
+			if (blockNames.indexOf(name) !== -1) {
+				throw new Error(`Block "${name}" defined more than once.`);
+			}
+			blockNames.push(name);
+
+			this._emitFuncBegin(block, `b_${name}`);
+
+			const tmpFrame = new nunjucks.runtime.Frame();
+			this._emitLine('var frame = frame.push(true);');
+			this.compile(block.body, tmpFrame);
+			this._emitFuncEnd();
+		});
+
+		this._emitLine('return {');
+
+		blocks.forEach((block, i) => {
+			const blockName = `b_${block.name.value}`;
+			this._emitLine(`${blockName}: ${blockName},`);
+		});
+
+		this._emitLine('root: root\n};');
+	}
 }

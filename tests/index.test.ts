@@ -927,7 +927,7 @@ describe('Async env', () => {
 			loader = new StringLoader();
 		});
 
-		it.only('should handle async functions in include statements', async () => {
+		it('should handle async functions in include statements', async () => {
 			const greetingTemplate = 'Hello, {{ name }}!';
 			loader.addTemplate('greeting.njk', greetingTemplate);
 
