@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import * as nunjucks from 'nunjucks';
 import { AsyncEnvironment } from '../dist/index';
 import { assert } from 'console';
 import { unescape } from 'he';
+import { StringLoader } from './StringLoader';
 
 describe('Async env', () => {
 	let env: AsyncEnvironment;
@@ -918,18 +918,28 @@ describe('Async env', () => {
 			</div>
 			`.trim());
 		});
+	});
 
-		it('should handle async functions in include statements', async () => {
-			// Note: This test assumes that AsyncEnvironment supports async getTemplate
-			// If it doesn't, this test would need to be adjusted or removed
+	describe('Include async tests', () => {
+		let loader: StringLoader;
+
+		beforeEach(() => {
+			loader = new StringLoader();
+		});
+
+		it.only('should handle async functions in include statements', async () => {
+			const greetingTemplate = 'Hello, {{ name }}!';
+			loader.addTemplate('greeting.njk', greetingTemplate);
+
 			const context = {
-				async getTemplate() {
+				async getTemplateName() {
 					await delay(50);
-					return 'Hello, {{ name }}!';
+					return 'greeting.njk';
 				},
 				name: 'World'
 			};
-			const template = '{% include getTemplate() %}';
+
+			const template = '{% include getTemplateName() %}';
 			const result = await env.renderStringAsync(template, context);
 			expect(result).to.equal('Hello, World!');
 		});
