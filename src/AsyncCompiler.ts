@@ -1,5 +1,6 @@
 import * as nunjucks from 'nunjucks';
 import { compiler, runtime, nodes } from 'nunjucks';
+import { assert } from './utils';
 
 var useAsync = true;
 
@@ -11,6 +12,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	bufferStack: string[] = [];
 	insideAsyncDepth = 0;
 	_emit(code: string) {
+		//assert(!code.includes('[object Object]'));
 		if (useAsync) {
 			const replaces = [
 				{
@@ -373,6 +375,9 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("var " + len + " = " + arr + ".length;");
 			this._emitLine("for(" + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
 
+			this._emitLine('frame = frame.push();');//async
+			this.emitAsyncBlockBegin(['frame']);
+
 			// Bind each declared var
 			node.name.children.forEach(function (child, u) {
 				var tid = _this10._tmpid();
@@ -384,6 +389,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._withScopedSyntax(function () {
 				_this10.compile(node.body, frame);
 			});
+
+			this.emitAsyncBlockEnd(['frame']);
+			this._emitLine('frame = frame.pop();');//async
+
 			this._emitLine('}');
 			this._emitLine('} else {');
 			// Iterate over the key/values of an object
@@ -397,6 +406,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine(i + " = -1;");
 			this._emitLine("var " + len + " = runtime.keys(" + arr + ").length;");
 			this._emitLine("for(var " + k + " in " + arr + ") {");
+
+			this._emitLine('frame = frame.push();');//async
+			this.emitAsyncBlockBegin(['frame']);
+
 			this._emitLine(i + "++;");
 			this._emitLine("var " + v + " = " + arr + "[" + k + "];");
 			this._emitLine("frame.set(\"" + key.value + "\", " + k + ");");
@@ -405,6 +418,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._withScopedSyntax(function () {
 				_this10.compile(node.body, frame);
 			});
+
+			this.emitAsyncBlockEnd(['frame']);
+			this._emitLine('frame = frame.pop();');//async
+
 			this._emitLine('}');
 			this._emitLine('}');
 		} else {
