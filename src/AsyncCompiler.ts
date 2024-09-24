@@ -376,7 +376,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("for(" + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
 
 			this._emitLine('frame = frame.push();');//async
-			this.emitAsyncBlockBegin(['frame']);
+			this.emitAsyncBlockBegin(['frame', i]);
 
 			// Bind each declared var
 			node.name.children.forEach(function (child, u) {
@@ -391,7 +391,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				_this10.compile(node.body, frame);
 			});
 
-			this.emitAsyncBlockEnd(['frame']);
+			this.emitAsyncBlockEnd(['frame', i]);
 			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');
@@ -409,7 +409,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("for(var " + k + " in " + arr + ") {");
 
 			this._emitLine('frame = frame.push();');//async
-			this.emitAsyncBlockBegin(['frame']);
+			this.emitAsyncBlockBegin(['frame', k]);
 
 			this._emitLine(i + "++;");
 			this._emitLine("var " + v + " = " + arr + "[" + k + "];");
@@ -420,7 +420,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 				_this10.compile(node.body, frame);
 			});
 
-			this.emitAsyncBlockEnd(['frame']);
+			this.emitAsyncBlockEnd(['frame', k]);
 			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');
@@ -433,7 +433,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("for(var " + i + "=0; " + i + " < " + arr + ".length; " + i + "++) {");
 
 			this._emitLine('frame = frame.push();');//async
-			this.emitAsyncBlockBegin(['frame']);
+			this.emitAsyncBlockBegin(['frame', i]);
 
 			this._emitLine("var " + _v + " = " + arr + "[" + i + "];");
 			this._emitLine("frame.set(\"" + node.name.value + "\", " + _v + ");");
@@ -443,7 +443,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			});
 
 
-			this.emitAsyncBlockEnd(['frame']);
+			this.emitAsyncBlockEnd(['frame', i]);
 			this._emitLine('frame = frame.pop();');//async
 
 			this._emitLine('}');

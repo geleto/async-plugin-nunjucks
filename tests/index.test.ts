@@ -413,6 +413,160 @@ describe('Async env', () => {
 			  C-3 (Last)
 			`);
 		});
+
+		it('should handle array unpacking with async function in loop body', async () => {
+			const context = {
+				users: [
+					['John', 30],
+					['Jane', 25],
+					['Bob', 35]
+				],
+				async processUser(name: string, age: number): Promise<string> {
+					await delay(50);
+					return `${name} is ${age} years old`;
+				}
+			};
+
+			const template = `
+			{%- for name, age in users %}
+				{{ processUser(name, age) }}
+			{%- endfor %}`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal(`
+				John is 30 years old
+				Jane is 25 years old
+				Bob is 35 years old`
+			);
+		});
+
+		it.only('should handle object unpacking with async function in loop body', async () => {
+			const context = {
+				userAges: {
+					John: 30,
+					Jane: 25,
+					Bob: 35
+				},
+				async formatUserAge(name: string, age: number): Promise<string> {
+					await delay(50);
+					return `${name}: ${age} years`;
+				}
+			};
+
+			const template = `
+			{%- for name, age in userAges %}
+				{{ formatUserAge(name, age) }}
+			{%- endfor %}`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result).to.equal(`
+				John: 30 years
+				Jane: 25 years
+				Bob: 35 years`
+			);
+		});
+
+		it('should handle array unpacking with multiple async functions in loop body', async () => {
+			const context = {
+				employees: [
+					['John', 'IT'],
+					['Jane', 'HR'],
+					['Bob', 'Finance']
+				],
+				async getTitle(department: string): Promise<string> {
+					await delay(50);
+					const titles = { IT: 'Engineer', HR: 'Manager', Finance: 'Analyst' };
+					return (titles as any)[department] || 'Employee';
+				},
+				async formatEmployee(name: string, title: string): Promise<string> {
+					await delay(50);
+					return `${name} - ${title}`;
+				}
+			};
+
+			const template = `
+			{%- for name, dept in employees %}
+			  {{ formatEmployee(name, getTitle(dept)) }}
+			{%- endfor %}
+			`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result.trim()).to.equal(
+				'John - Engineer\n' +
+				'Jane - Manager\n' +
+				'Bob - Analyst'
+			);
+		});
+
+		it('should handle array unpacking with async function and conditional in loop body', async () => {
+			const context = {
+				users: [
+					['John', 'admin'],
+					['Jane', 'user'],
+					['Bob', 'moderator']
+				],
+				async getUserPermissions(role: string): Promise<string[]> {
+					await delay(50);
+					const permissions = {
+						admin: ['read', 'write', 'delete'],
+						moderator: ['read', 'write'],
+						user: ['read']
+					};
+					return (permissions as any)[role] || [];
+				}
+			};
+
+			const template = `
+			{%- for name, role in users %}
+			  {{ name }}:
+			  {%- set permissions = getUserPermissions(role) %}
+			  {%- if 'write' in permissions %}
+				Can write
+			  {%- else %}
+				Cannot write
+			  {%- endif %}
+			{%- endfor %}
+			`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result.trim()).to.equal(
+				'John: Can write\n' +
+				'Jane: Cannot write\n' +
+				'Bob: Can write'
+			);
+		});
+
+		it('should handle nested loops with unpacking and async functions', async () => {
+			const context = {
+				departments: {
+					IT: [['John', 'developer'], ['Jane', 'designer']],
+					HR: [['Bob', 'recruiter'], ['Alice', 'manager']]
+				},
+				async getEmployeeDetails(name: string, role: string): Promise<string> {
+					await delay(50);
+					return `${name} (${role})`;
+				}
+			};
+
+			const template = `
+			{%- for dept, employees in departments %}
+			  {{ dept }}:
+			  {%- for name, role in employees %}
+				- {{ getEmployeeDetails(name, role) }}
+			  {%- endfor %}
+			{%- endfor %}
+			`;
+
+			const result = await env.renderStringAsync(template, context);
+			expect(result.trim()).to.equal(
+				'IT:\n' +
+				'  - John (developer)\n' +
+				'  - Jane (designer)\n' +
+				'HR:\n' +
+				'  - Bob (recruiter)\n' +
+				'  - Alice (manager)'
+			);
+		});
 	});
 
 	describe('Conditional Statements', () => {
