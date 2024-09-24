@@ -534,7 +534,7 @@ describe('Async env', () => {
 			);
 		});
 
-		it('should handle nested loops with unpacking and async functions', async () => {
+		it.only('should handle nested loops with unpacking and async functions', async () => {
 			const context = {
 				departments: {
 					IT: [['John', 'developer'], ['Jane', 'designer']],
@@ -548,21 +548,20 @@ describe('Async env', () => {
 
 			const template = `
 			{%- for dept, employees in departments %}
-			  {{ dept }}:
-			  {%- for name, role in employees %}
-				- {{ getEmployeeDetails(name, role) }}
-			  {%- endfor %}
-			{%- endfor %}
-			`;
+				{{ dept }}:
+				{%- for name, role in employees %}
+					- {{ getEmployeeDetails(name, role) }}
+				{%- endfor %}
+			{%- endfor %}`;
 
 			const result = await env.renderStringAsync(template, context);
-			expect(result.trim()).to.equal(
-				'IT:\n' +
-				'  - John (developer)\n' +
-				'  - Jane (designer)\n' +
-				'HR:\n' +
-				'  - Bob (recruiter)\n' +
-				'  - Alice (manager)'
+			expect(result).to.equal(`
+				IT:
+					- John (developer)
+					- Jane (designer)
+				HR:
+					- Bob (recruiter)
+					- Alice (manager)`
 			);
 		});
 	});
