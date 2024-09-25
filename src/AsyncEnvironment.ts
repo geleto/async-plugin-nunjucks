@@ -22,7 +22,6 @@ export class AsyncEnvironment extends nunjucks.Environment {
 	//TODO: this in separate object in the template
 	//a new parameter to template.render
 	//it will count activeAwaits, store async errors, etc...
-	private asyncErrors: Error[] = [];
 	private activeAwaits = 0;//@todo - AsyncEnvironment must be stateless
 	private completionResolver: (() => void) | null = null;
 
@@ -39,7 +38,6 @@ export class AsyncEnvironment extends nunjucks.Environment {
 			undoPatch = this.monkeyPatch();
 		}
 		try {
-			this.asyncErrors = [];
 			const res = await new Promise<NestedStringArray>((resolve, reject) => {
 				let callback = (err: Error | null, res: string | null) => {
 					if (err || res === null) {
@@ -54,21 +52,15 @@ export class AsyncEnvironment extends nunjucks.Environment {
 				else
 					this.renderString(template, context, callback);
 			});
-			//await this.waitAll();
 			return this.flattenNestedArray(res);
 		}
 		catch (err) {
-			//non-async error
-			//await this.waitAll();
 			throw err;
 		}
 		finally {
 			if (undoPatch) {
 				undoPatch();
 				AsyncEnvironment.monkeyPatched = false;
-			}
-			if (this.asyncErrors.length > 0) {
-				throw this.asyncErrors[0];
 			}
 		}
 	}
@@ -219,10 +211,6 @@ export class AsyncEnvironment extends nunjucks.Environment {
 			this.completionResolver();
 			this.completionResolver = null;
 		}
-	}
-
-	private onAsyncError(error: Error, lineno: number, colno: number) {
-		this.asyncErrors.push(error);
 	}
 
 	async waitAll(): Promise<void> {

@@ -66,9 +66,11 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAsyncBlockEnd(argumentNames: string[] = []) {
 		if (useAsync) {
 			this._emitLine(`})(${argumentNames.join(',')})`);
-			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
-			this._emitLine('.finally(()=>{env.endAwait();})');
 			this.insideAsyncDepth--;
+			if (this.insideAsyncDepth == 0) {
+				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
+			}
+			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
 
@@ -84,9 +86,11 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAsyncValueEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
-			this._emitLine('.finally(()=>{env.endAwait();})');
 			this.insideAsyncDepth--;
+			if (this.insideAsyncDepth == 0) {
+				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
+			}
+			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
 
@@ -106,9 +110,11 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAddToBufferEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this._emitLine('.catch(e =>{env.onAsyncError(e, lineno, colno)})');
-			this._emitLine('.finally(()=>{env.endAwait();})');
 			this.insideAsyncDepth--;
+			if (this.insideAsyncDepth == 0) {
+				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
+			}
+			this._emitLine('.finally(()=>{env.endAwait();})');
 		}
 	}
 
@@ -489,7 +495,9 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine('  } else {');
 			this._emitLine(`    cb(null, ${this.buffer});`);
 			this._emitLine('  }');
-			this._emitLine('}).catch(e => cb(runtime.handleError(e, lineno, colno)));');
+			this._emitLine('}).catch(e => {');
+			this._emitLine('cb(runtime.handleError(e, lineno, colno))');
+			this._emitLine('});');
 		} else {
 			this._emitLine('if(parentTemplate) {');
 			this._emitLine('  parentTemplate.rootRenderFunc(env, context, frame, runtime, cb);');
