@@ -493,7 +493,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine('  if(parentTemplate) {');
 			this._emitLine('    parentTemplate.rootRenderFunc(env, context, frame, runtime, cb);');
 			this._emitLine('  } else {');
-			this._emitLine(`    cb(null, ${this.buffer});`);
+			this._emitLine(`    cb(null, env.flattentBuffer(${this.buffer}));`);
 			this._emitLine('  }');
 			this._emitLine('}).catch(e => {');
 			this._emitLine('cb(runtime.handleError(e, lineno, colno))');
@@ -538,5 +538,48 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		});
 
 		this._emitLine('root: root\n};');
+	}
+
+	/*_compileGetTemplate(node: nunjucks.nodes.Include, frame: nunjucks.runtime.Frame, eagerCompile: boolean, ignoreMissing: boolean) {
+		const parentTemplateId = this._tmpid();
+		const parentName = this._templateName();
+		const cb = this._makeCallback(parentTemplateId);
+		const eagerCompileArg = (eagerCompile) ? 'true' : 'false';
+		const ignoreMissingArg = (ignoreMissing) ? 'true' : 'false';
+		this._emit('env.getTemplate(');
+		this._compileExpression(node.template, frame);
+		this._emitLine(`, ${eagerCompileArg}, ${parentName}, ${ignoreMissingArg}, ${cb}`);
+		return parentTemplateId;
+	}*/
+
+	compileInclude(node: nunjucks.nodes.Include, frame: nunjucks.runtime.Frame) {
+		this._emitLine('var tasks = [];');
+		this._emitLine('tasks.push(');
+		this._emitLine('function(callback) {');
+		if (useAsync) {
+			this.emitAsyncBlockBegin();
+		}
+		const id = this._compileGetTemplate(node, frame, false, node.ignoreMissing);
+		this._emitLine(`callback(null,${id});`);
+		this._emitLine('});');
+		if (useAsync) {
+			this.emitAsyncBlockEnd();
+		}
+		this._emitLine('});');
+
+		const id2 = this._tmpid();
+		this._emitLine('tasks.push(');
+		this._emitLine('function(template, callback){');
+		this._emitLine('template.render(context.getVariables(), frame, ' + this._makeCallback(id2));
+		this._emitLine('callback(null,' + id2 + ');});');
+		this._emitLine('});');
+
+		this._emitLine('tasks.push(');
+		this._emitLine('function(result, callback){');
+		this._emitLine(`${this.buffer} += result;`);
+		this._emitLine('callback(null);');
+		this._emitLine('});');
+		this._emitLine('env.waterfall(tasks, function(){');
+		this._addScopeLevel();
 	}
 }

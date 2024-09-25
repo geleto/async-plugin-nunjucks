@@ -38,12 +38,12 @@ export class AsyncEnvironment extends nunjucks.Environment {
 			undoPatch = this.monkeyPatch();
 		}
 		try {
-			const res = await new Promise<NestedStringArray>((resolve, reject) => {
+			const res = await new Promise<string>((resolve, reject) => {
 				let callback = (err: Error | null, res: string | null) => {
 					if (err || res === null) {
 						reject(err ?? new Error('No render result'));
 					} else {
-						resolve(res as any as NestedStringArray);
+						resolve(res);
 					}
 				}
 
@@ -52,7 +52,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 				else
 					this.renderString(template, context, callback);
 			});
-			return this.flattenNestedArray(res);
+			return res;
 		}
 		catch (err) {
 			throw err;
@@ -187,10 +187,10 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		};
 	}
 
-	flattenNestedArray(arr: NestedStringArray): string {
+	flattentBuffer(arr: NestedStringArray): string {
 		const result = arr.reduce<string>((acc, item) => {
 			if (Array.isArray(item)) {
-				return acc + this.flattenNestedArray(item);
+				return acc + this.flattentBuffer(item);
 			}
 			if (typeof item === 'function') {
 				return ((item as any)(acc) ?? '');
