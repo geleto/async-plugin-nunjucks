@@ -922,14 +922,14 @@ describe('Async env', () => {
 
 	describe('Include async tests', () => {
 		let loader: StringLoader;
+		let lenv: AsyncEnvironment;
 
 		beforeEach(() => {
 			loader = new StringLoader();
+			lenv = new AsyncEnvironment(loader);
 		});
 
 		it('should handle async functions in include statements', async () => {
-			const greetingTemplate = 'Hello, {{ name }}!';
-			loader.addTemplate('greeting.njk', greetingTemplate);
 
 			const context = {
 				async getTemplateName() {
@@ -939,8 +939,13 @@ describe('Async env', () => {
 				name: 'World'
 			};
 
-			const template = '{% include getTemplateName() %}';
-			const result = await env.renderStringAsync(template, context);
+			const greetingTemplate = 'Hello, {{ name }}!';
+			loader.addTemplate('greeting.njk', greetingTemplate);
+
+			const mainTemplate = '{% include getTemplateName() %}';
+			loader.addTemplate('main.njk', mainTemplate);
+
+			const result = await lenv.renderAsync('main.njk', context);
 			expect(result).to.equal('Hello, World!');
 		});
 	});
@@ -958,7 +963,7 @@ describe('Async env', () => {
 			expect(result).to.equal('John is admin');
 		});
 
-		it.only('should handle error propagation in async calls', async () => {
+		it('should handle error propagation in async calls', async () => {
 			const context = {
 				async errorFunc() {
 					await delay(50);
