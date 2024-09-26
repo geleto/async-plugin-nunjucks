@@ -8,6 +8,7 @@ import * as nunjucks from 'nunjucks';
  * if array - store the function at the end og the array to be called when the array elements before it are concatenated
  */
 export const asyncRuntime = {
+	includeDepth: 0,
 	suppressValue: function (val: string | Promise<any> | any[] | null | undefined, autoescape: boolean) {
 		if (Array.isArray(val)) {
 			if (autoescape) {
@@ -59,5 +60,14 @@ export const asyncRuntime = {
 			})(val as Promise<any>);
 		}
 		return new nunjucks.runtime.SafeString(val as string);
+	},
+	pushInclude() {
+		this.includeDepth++;
+	},
+	popInclude() {
+		this.includeDepth--;
+	},
+	isIncluded() {
+		return (this.includeDepth || 0) > 0;
 	}
 }
