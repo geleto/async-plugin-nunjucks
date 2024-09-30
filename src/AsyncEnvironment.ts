@@ -71,12 +71,12 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		return result;
 	}
 
-	startAsync(): void {
+	enterClosure(): void {
 		this.activeAwaits++;
 	}
 
 	//this should always be called from the try 'finally' block
-	endAsync(): void {
+	leaveClosure(): void {
 		this.activeAwaits--;
 		if (this.activeAwaits === 0 && this.completionResolver) {
 			this.completionResolver();
@@ -84,7 +84,7 @@ export class AsyncEnvironment extends nunjucks.Environment {
 		}
 	}
 
-	async waitAll(): Promise<void> {
+	async waitAllClosures(): Promise<void> {
 		if (this.activeAwaits === 0) {
 			return Promise.resolve();
 		}

@@ -45,7 +45,7 @@ export const asyncRuntime = {
 		return (this as any).super_ensureDefined(val, lineno, colno);
 	},
 
-	asyncSafeString: function (val: string | Promise<any> | any[] | null | undefined) {
+	/*asyncSafeString: function (val: string | Promise<any> | any[] | null | undefined) {
 		if (Array.isArray(val)) {
 			//append the function to the array, so it will be called after the elements before it are joined
 			val.push((value: string) => {
@@ -60,7 +60,7 @@ export const asyncRuntime = {
 			})(val as Promise<any>);
 		}
 		return new nunjucks.runtime.SafeString(val as string);
-	},
+	},*/
 	pushInclude() {
 		this.includeDepth++;
 	},

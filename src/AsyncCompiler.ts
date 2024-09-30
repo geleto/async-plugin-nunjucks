@@ -23,10 +23,10 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 					find: `${this.buffer} += `,
 					replace: `${this.buffer}[${this.buffer}_index++] = `
 				},
-				{
+				/*{
 					find: 'new SafeString',
 					replace: `await runtime.asyncSafeString`
-				},
+				},*/
 				{
 					find: 'for(var ',
 					replace: 'for(let '
@@ -50,7 +50,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		this.codebuf.push(code);
 	}
 
-	//wrap await calls in this, maybe we should only env.startAsync()/endAsync() the async blocks
+	//wrap await calls in this, maybe we should only env.enterClosure()/leaveClosure() the async blocks
 	emitAwaitBegin() {
 		if (useAsync) {
 			this._emit('(await ');
@@ -67,7 +67,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	emitAsyncBlockBegin() {
 		if (useAsync) {
 			this._emit(`(async (frame)=>{`);
-			this._emit('env.startAsync();');
+			this._emit('env.enterClosure();');
 			this.insideAsyncDepth++;
 		}
 	}
@@ -79,14 +79,14 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			if (this.insideAsyncDepth == 0) {
 				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
 			}
-			this._emitLine('.finally(()=>{env.endAsync();})');
+			this._emitLine('.finally(()=>{env.leaveClosure();})');
 		}
 	}
 
 	emitAsyncValueBegin() {
 		if (useAsync) {
 			this._emitLine(`${this.insideAsyncDepth > 0 ? 'await ' : ''}(async ()=>{`);
-			this._emitLine('env.startAsync();');
+			this._emitLine('env.enterClosure();');
 			this._emit('return ');
 			this.insideAsyncDepth++;
 		}
@@ -99,14 +99,14 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			if (this.insideAsyncDepth == 0) {
 				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
 			}
-			this._emitLine('.finally(()=>{env.endAsync();})');
+			this._emitLine('.finally(()=>{env.leaveClosure();})');
 		}
 	}
 
 	emitAddToBufferBegin() {
 		if (useAsync) {
 			this._emitLine('(async ()=>{');
-			this._emitLine('env.startAsync();');
+			this._emitLine('env.enterClosure();');
 			this._emitLine(`var index = ${this.buffer}_index++;`);
 			this._emit(`${this.buffer}[index] = `);
 			this.insideAsyncDepth++;
@@ -123,7 +123,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			if (this.insideAsyncDepth == 0) {
 				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
 			}
-			this._emitLine('.finally(()=>{env.endAsync();})');
+			this._emitLine('.finally(()=>{env.leaveClosure();})');
 		}
 	}
 
@@ -502,7 +502,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 		if (useAsync) {
 			this._emitLine('if(!isIncluded){');
-			this._emitLine('env.waitAll().then(() => {');
+			this._emitLine('env.waitAllClosures().then(() => {');
 			this._emitLine('  if(parentTemplate) {');
 			this._emitLine('    parentTemplate.rootRenderFunc(env, context, frame, runtime, cb);');
 			this._emitLine('  } else {');
