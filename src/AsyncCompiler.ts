@@ -10,7 +10,7 @@ var useAsync = true;
 //This would not have been necessary if nunjucks allowed to override the compiler class
 export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	bufferStack: string[] = [];
-	insideAsyncDepth = 0;
+	asyncClosureDepth = 0;
 	_emit(code: string) {
 		//assert(!code.includes('[object Object]'));
 		if (useAsync) {
@@ -68,15 +68,15 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		if (useAsync) {
 			this._emit(`(async (frame)=>{`);
 			this._emit('env.enterClosure();');
-			this.insideAsyncDepth++;
+			this.asyncClosureDepth++;
 		}
 	}
 
 	_emitAsyncBlockEnd() {
 		if (useAsync) {
 			this._emitLine(`})(frame)`);
-			this.insideAsyncDepth--;
-			if (this.insideAsyncDepth == 0) {
+			this.asyncClosureDepth--;
+			if (this.asyncClosureDepth == 0) {
 				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
 			}
 			this._emitLine('.finally(()=>{env.leaveClosure();})');
@@ -85,18 +85,18 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 
 	_emitAsyncValueBegin() {
 		if (useAsync) {
-			this._emitLine(`${this.insideAsyncDepth > 0 ? 'await ' : ''}(async ()=>{`);
+			this._emitLine(`${this.asyncClosureDepth > 0 ? 'await ' : ''}(async ()=>{`);
 			this._emitLine('env.enterClosure();');
 			this._emit('return ');
-			this.insideAsyncDepth++;
+			this.asyncClosureDepth++;
 		}
 	}
 
 	_emitAsyncValueEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this.insideAsyncDepth--;
-			if (this.insideAsyncDepth == 0) {
+			this.asyncClosureDepth--;
+			if (this.asyncClosureDepth == 0) {
 				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
 			}
 			this._emitLine('.finally(()=>{env.leaveClosure();})');
@@ -109,7 +109,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine('env.enterClosure();');
 			this._emitLine(`var index = ${this.buffer}_index++;`);
 			this._emit(`${this.buffer}[index] = `);
-			this.insideAsyncDepth++;
+			this.asyncClosureDepth++;
 		}
 		else {
 			this._emit(`${this.buffer} += `);
@@ -119,8 +119,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	_emitAddToBufferEnd() {
 		if (useAsync) {
 			this._emitLine('})()');
-			this.insideAsyncDepth--;
-			if (this.insideAsyncDepth == 0) {
+			this.asyncClosureDepth--;
+			if (this.asyncClosureDepth == 0) {
 				this._emitLine('.catch(e=>{cb(runtime.handleError(e, lineno, colno))})');
 			}
 			this._emitLine('.finally(()=>{env.leaveClosure();})');
