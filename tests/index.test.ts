@@ -18,7 +18,7 @@ describe('Async env', () => {
 			const context = {
 				get currentTime() {
 					return (async () => {
-						await delay(50);  // Reduced delay
+						await delay(5);
 						return '2024-09-12T17:12:123Z';
 					})();
 				}
@@ -33,7 +33,7 @@ describe('Async env', () => {
 		it('should correctly resolve an async Promise variable', async () => {
 			const context = {
 				weatherPromise: (async () => {
-					await delay(100);  // Reduced delay
+					await delay(5);
 					return { temp: 22, condition: 'Sunny' };
 				})()
 			};
@@ -47,7 +47,7 @@ describe('Async env', () => {
 		it('should correctly resolve an async function in output', async () => {
 			const context = {
 				async fetchUserName(id: number) {
-					await delay(150);
+					await delay(5);
 					return 'John Doe';
 				}
 			};
@@ -60,7 +60,7 @@ describe('Async env', () => {
 		it('should correctly resolve an async function followed by member resolution in output', async () => {
 			const context = {
 				async fetchUser(id: number) {
-					await delay(150);
+					await delay(5);
 					return { id, name: 'John Doe', email: 'john@example.com' };
 				}
 			};
@@ -73,7 +73,7 @@ describe('Async env', () => {
 		it('should correctly resolve an async function with set', async () => {
 			const context = {
 				async fetchUser(id: number) {
-					await delay(150);
+					await delay(5);
 					return { id, name: 'John Doe', email: 'john@example.com' };
 				}
 			};
@@ -99,11 +99,11 @@ describe('Async env', () => {
 				];
 			const context = {
 				async fetchUser(id: number) {
-					await delay(100);
+					await delay(10);
 					return { id, name: 'John Doe' };
 				},
 				async fetchUserPostsFirstTitle(userId: number) {
-					await delay(50);
+					await delay(5);
 					assert(userId >= 0 && userId < userPosts.length);
 					return userPosts[userId][0].title;
 				}
@@ -125,15 +125,15 @@ describe('Async env', () => {
 		it('should handle a chain of dependent async functions', async () => {
 			const context = {
 				async fetchUserId() {
-					await delay(50);
+					await delay(5);
 					return 1;
 				},
 				async fetchUserName(id: number) {
-					await delay(50);
+					await delay(4);
 					return id === 1 ? 'John Doe' : 'Jane Doe';
 				},
 				async fetchUserPosts(name: string) {
-					await delay(50);
+					await delay(3);
 					return name === 'John Doe' ? ['Post 1', 'Post 2'] : ['Post A', 'Post B'];
 				}
 			};
@@ -157,19 +157,19 @@ describe('Async env', () => {
 		it('should handle complex dependent async functions', async () => {
 			const context = {
 				async fetchUserId() {
-					await delay(50);
+					await delay(5);
 					return 1;
 				},
 				async fetchUserName(id: number) {
-					await delay(50);
+					await delay(4);
 					return id === 1 ? 'John Doe' : 'Jane Doe';
 				},
 				async fetchUserRole(name: string) {
-					await delay(50);
+					await delay(3);
 					return name === 'John Doe' ? 'Admin' : 'User';
 				},
 				async fetchPermissions(role: string) {
-					await delay(50);
+					await delay(2);
 					return role === 'Admin' ? ['read', 'write', 'delete'] : ['read'];
 				}
 			};
@@ -196,15 +196,15 @@ describe('Async env', () => {
 		it('should handle async functions with multiple dependencies', async () => {
 			const context = {
 				async fetchUser(id: number) {
-					await delay(50);
+					await delay(5);
 					return { id, name: 'John Doe' };
 				},
 				async fetchDepartment(id: number) {
-					await delay(50);
+					await delay(4);
 					return { id, name: 'IT' };
 				},
 				async generateReport(user: any, department: any) {
-					await delay(50);
+					await delay(3);
 					return `Report for ${user.name} in ${department.name}`;
 				}
 			};
@@ -228,7 +228,7 @@ describe('Async env', () => {
 			const context = {
 				ids: [1, 2, 3],
 				async fetchData(id: number) {
-					await delay(50 - 2 * id);
+					await delay(7 - 2 * id);
 					return `Data for ID ${id}`;
 				}
 			};
@@ -260,11 +260,11 @@ describe('Async env', () => {
 				];
 			const context = {
 				async fetchUser(id: number) {
-					await delay(100);
+					await delay(7);
 					return { id, name: 'John Doe' };
 				},
 				async fetchUserPosts(userId: number) {
-					await delay(50);
+					await delay(5);
 					assert(userId >= 0 && userId < userPosts.length);
 					return userPosts[userId];
 				}
@@ -292,7 +292,7 @@ describe('Async env', () => {
 			const context = {
 				items: [1, 2, 3],
 				async getData(id: number) {
-					await delay(50);
+					await delay(7 - 2 * id);
 					return `Item ${id}`;
 				}
 			};
@@ -315,7 +315,7 @@ describe('Async env', () => {
 			const context = {
 				items: ['a', 'b', 'c'],
 				async transform(item: string, index: number) {
-					await delay(50);
+					await delay(5 - index);
 					return `${item.toUpperCase()}-${index}`;
 				}
 			};
@@ -338,7 +338,7 @@ describe('Async env', () => {
 			const context = {
 				users: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }],
 				async getPosts(userId: number) {
-					await delay(50);
+					await delay(5);
 					return [`Post 1 by User ${userId}`, `Post 2 by User ${userId}`];
 				}
 			};
@@ -366,11 +366,11 @@ describe('Async env', () => {
 		it('should handle async functions in for...in...async loops', async () => {
 			const context = {
 				async getUsers() {
-					await delay(50);
+					await delay(5);
 					return [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }];
 				},
 				async getRole(userId: number) {
-					await delay(30);
+					await delay(3);
 					return userId === 1 ? 'Admin' : 'User';
 				}
 			};
@@ -392,7 +392,7 @@ describe('Async env', () => {
 			const context = {
 				items: ['a', 'b', 'c'],
 				async processItem(item: string, index: number, first: boolean, last: boolean) {
-					await delay(50);
+					await delay(7 - index);
 					let result = `${item.toUpperCase()}-${index}`;
 					if (first) result += ' (First)';
 					if (last) result += ' (Last)';
@@ -422,7 +422,7 @@ describe('Async env', () => {
 					['Bob', 35]
 				],
 				async processUser(name: string, age: number): Promise<string> {
-					await delay(50);
+					await delay(age / 10);
 					return `${name} is ${age} years old`;
 				}
 			};
@@ -448,7 +448,7 @@ describe('Async env', () => {
 					Bob: 35
 				},
 				async formatUserAge(name: string, age: number): Promise<string> {
-					await delay(50);
+					await delay(age / 10);
 					return `${name}: ${age} years`;
 				}
 			};
@@ -474,12 +474,12 @@ describe('Async env', () => {
 					['Bob', 'Finance']
 				],
 				async getTitle(department: string): Promise<string> {
-					await delay(50);
+					await delay(department.length);
 					const titles = { IT: 'Engineer', HR: 'Manager', Finance: 'Analyst' };
 					return (titles as any)[department] || 'Employee';
 				},
 				async formatEmployee(name: string, title: string): Promise<string> {
-					await delay(50);
+					await delay(name.length);
 					return `${name} - ${title}`;
 				}
 			};
@@ -505,7 +505,7 @@ describe('Async env', () => {
 					['Bob', 'moderator']
 				],
 				async getUserPermissions(role: string): Promise<string[]> {
-					await delay(50);
+					await delay(role.length);
 					const permissions = {
 						admin: ['read', 'write', 'delete'],
 						moderator: ['read', 'write'],
@@ -541,7 +541,7 @@ describe('Async env', () => {
 					HR: [['Bob', 'recruiter'], ['Alice', 'manager']]
 				},
 				async getEmployeeDetails(name: string, role: string): Promise<string> {
-					await delay(50);
+					await delay(name.length);
 					return `${name} (${role})`;
 				}
 			};
@@ -570,7 +570,7 @@ describe('Async env', () => {
 		it('should handle async function in if condition', async () => {
 			const context = {
 				async isUserAdmin(id: number) {
-					await delay(50);
+					await delay(5 - id);
 					return id === 1;
 				}
 			};
@@ -597,7 +597,7 @@ describe('Async env', () => {
 		it('should handle multiple async conditions in if/else if/else', async () => {
 			const context = {
 				async getUserRole(id: number) {
-					await delay(50);
+					await delay(5 - id);
 					if (id === 1) return 'admin';
 					if (id === 2) return 'moderator';
 					return 'user';
@@ -629,11 +629,11 @@ describe('Async env', () => {
 		it('should handle async functions inside if blocks', async () => {
 			const context = {
 				async isUserAdmin(id: number) {
-					await delay(50);
+					await delay(5 - id);
 					return id === 1;
 				},
 				async getUserName(id: number) {
-					await delay(50);
+					await delay(5 - id);
 					return id === 1 ? 'John' : 'Jane';
 				}
 			};
@@ -659,11 +659,11 @@ describe('Async env', () => {
 		it('should handle nested if statements with async functions', async () => {
 			const context = {
 				async isUserActive(id: number) {
-					await delay(50);
+					await delay(5);
 					return id % 2 === 0;
 				},
 				async getUserRole(id: number) {
-					await delay(50);
+					await delay(3);
 					return id === 1 ? 'admin' : 'user';
 				}
 			};
@@ -697,13 +697,13 @@ describe('Async env', () => {
 	describe('Async Functions in Expressions', () => {
 		it('should handle async functions in filter expressions', async () => {
 			env.addFilter('uppercase', async (str: string) => {
-				await delay(50);
+				await delay(5);
 				return str.toUpperCase();
 			});//note that this is not declared as async filter with the regular callback method, it just returns a promise
 
 			const context = {
 				async uppercase(str: string) {
-					await delay(50);
+					await delay(5);
 					return str.toUpperCase();
 				}
 			};
@@ -715,7 +715,7 @@ describe('Async env', () => {
 		it('should handle async functions in if expressions', async () => {
 			const context = {
 				async isAdmin() {
-					await delay(50);
+					await delay(5);
 					return true;
 				}
 			};
@@ -729,7 +729,7 @@ describe('Async env', () => {
 		it('should handle async functions in for loops', async () => {
 			const context = {
 				async getItems() {
-					await delay(50);
+					await delay(5);
 					return ['a', 'b', 'c'];
 				}
 			};
@@ -741,7 +741,7 @@ describe('Async env', () => {
 		it('should handle async functions in set statements', async () => {
 			const context = {
 				async getValue() {
-					await delay(50);
+					await delay(5);
 					return 42;
 				}
 			};
@@ -755,7 +755,7 @@ describe('Async env', () => {
 		it('should handle async functions in macro calls', async () => {
 			const context = {
 				async fetchTitle(id: number) {
-					await delay(50);
+					await delay(5);
 					return id === 1 ? 'Hello' : 'World';
 				}
 			};
@@ -771,11 +771,11 @@ describe('Async env', () => {
 		it('should handle async functions in macro call arguments', async () => {
 			const context = {
 				async fetchTitle() {
-					await delay(50);
+					await delay(5);
 					return 'Async Title';
 				},
 				async fetchContent() {
-					await delay(50);
+					await delay(3);
 					return 'Async Content';
 				}
 			};
@@ -803,11 +803,11 @@ describe('Async env', () => {
 		it('should handle async macro call arguments with dependent function in macro body', async () => {
 			const context = {
 				async fetchUser(id: number) {
-					await delay(50);
+					await delay(5);
 					return { id, name: `User ${id}` };
 				},
 				async fetchUserPosts(userId: number) {
-					await delay(50);
+					await delay(3);
 					return [`Post 1 by User ${userId}`, `Post 2 by User ${userId}`];
 				}
 			};
@@ -844,15 +844,15 @@ describe('Async env', () => {
 		it('should handle multiple async macro call arguments', async () => {
 			const context = {
 				async fetchHeader() {
-					await delay(50);
+					await delay(5);
 					return 'Async Header';
 				},
 				async fetchFooter() {
-					await delay(50);
+					await delay(4);
 					return 'Async Footer';
 				},
 				async fetchContent() {
-					await delay(50);
+					await delay(3);
 					return 'Async Content';
 				}
 			};
@@ -882,11 +882,11 @@ describe('Async env', () => {
 		it('should handle nested async macro calls', async () => {
 			const context = {
 				async fetchUser(id: number) {
-					await delay(50);
+					await delay(5);
 					return { id, name: `User ${id}` };
 				},
 				async fetchUserRole(userId: number) {
-					await delay(50);
+					await delay(3);
 					return userId % 2 === 0 ? 'Admin' : 'User';
 				}
 			};
@@ -933,7 +933,7 @@ describe('Async env', () => {
 
 			const context = {
 				async getTemplateName() {
-					await delay(50);
+					await delay(5);
 					return 'greeting.njk';
 				},
 				name: 'World'
@@ -953,11 +953,11 @@ describe('Async env', () => {
 
 			const context = {
 				async getName() {
-					await delay(50);
+					await delay(5);
 					return 'World';
 				},
 				async getPlace() {
-					await delay(30);
+					await delay(3);
 					return 'London';
 				}
 			};
@@ -1034,7 +1034,7 @@ describe('Async env', () => {
 		it('should handle async functions returning complex objects', async () => {
 			const context = {
 				async getUser() {
-					await delay(50);
+					await delay(5);
 					return { name: 'John', roles: ['admin', 'user'] };
 				}
 			};
@@ -1046,7 +1046,7 @@ describe('Async env', () => {
 		it('should handle error propagation in async calls', async () => {
 			const context = {
 				async errorFunc() {
-					await delay(50);
+					await delay(5);
 					throw new Error('Async error');
 				}
 			};
