@@ -204,9 +204,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitAwaitBegin();//@todo - omit this for function calls (parent instanceof nodes.FunCall && parent.name === node)
 			this._emit('runtime.contextOrFrameLookup(' +
 				'context, frame, "' + name + '")');
-			if (useAsync) {
-				this._emitAwaitEnd();
-			}
+			this._emitAwaitEnd();
 		}
 	}
 
@@ -217,9 +215,7 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		this._emit('),');
 		this._compileExpression(node.val as nunjucks.nodes.Node, frame);
 		this._emit(')');
-		if (useAsync) {
-			this._emitAwaitEnd();
-		}
+		this._emitAwaitEnd();
 	}
 
 	compileLiteral(node: nunjucks.nodes.Node) {
@@ -238,7 +234,6 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 		}
 	}
 
-	//@todo - test
 	compileCallExtension(node: nunjucks.nodes.Node, frame: nunjucks.runtime.Frame, async: boolean) {
 		var args = node.args;
 		var contentArgs = node.contentArgs;
@@ -362,7 +357,6 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 	compileFor(node: nunjucks.nodes.For, frame: nunjucks.runtime.Frame) {
 		this._emitBufferBlockBegin();//
 
-		var _this10 = this;
 		// Some of this code is ugly, but it keeps the generated code
 		// as fast as possible. ForAsync also shares some of this, but
 		// not much.
@@ -394,16 +388,16 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitBufferBlockBegin();
 
 			// Bind each declared var
-			node.name.children.forEach(function (child, u) {
-				var tid = _this10._tmpid();
-				_this10._emitLine("var " + tid + " = " + arr + "[" + i + "][" + u + "];");
-				//_this10._emitLine("frame.set(\"" + child + "\", " + arr + "[" + i + "][" + u + "]);");
-				_this10._emitLine("frame.set(\"" + child.value + "\", " + arr + "[" + i + "][" + u + "]);");//fix nunjucks bug
+			node.name.children.forEach((child, u) => {
+				var tid = this._tmpid();
+				this._emitLine("var " + tid + " = " + arr + "[" + i + "][" + u + "];");
+				//this._emitLine("frame.set(\"" + child + "\", " + arr + "[" + i + "][" + u + "]);");
+				this._emitLine("frame.set(\"" + child.value + "\", " + arr + "[" + i + "][" + u + "]);");//fix nunjucks bug
 				frame.set(node.name.children?.[u].value as string, tid);
 			});
 			this._emitLoopBindings(node, arr, i, len);
-			this._withScopedSyntax(function () {
-				_this10.compile(node.body, frame);
+			this._withScopedSyntax(() => {
+				this.compile(node.body, frame);
 			});
 
 			this._emitBufferBlockEnd();
@@ -431,8 +425,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("frame.set(\"" + key.value + "\", " + k + ");");
 			this._emitLine("frame.set(\"" + val.value + "\", " + v + ");");
 			this._emitLoopBindings(node, arr, i, len);
-			this._withScopedSyntax(function () {
-				_this10.compile(node.body, frame);
+			this._withScopedSyntax(() => {
+				this.compile(node.body, frame);
 			});
 
 			this._emitBufferBlockEnd();
@@ -453,8 +447,8 @@ export class AsyncCompiler extends nunjucks.compiler.Compiler {
 			this._emitLine("var " + _v + " = " + arr + "[" + i + "];");
 			this._emitLine("frame.set(\"" + node.name.value + "\", " + _v + ");");
 			this._emitLoopBindings(node, arr, i, len);
-			this._withScopedSyntax(function () {
-				_this10.compile(node.body, frame);
+			this._withScopedSyntax(() => {
+				this.compile(node.body, frame);
 			});
 
 
