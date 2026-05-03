@@ -1,5 +1,7 @@
 # Async Nunjucks (async-plugin-nunjucks)
 
+⚠️**Note:** The work on this project has moved to another repository: [Cascada](https://github.com/geleto/cascada)
+
 This is Work in Progress and not yet ready
 
 A Nunjucks templating engine plugin that seamlessly supports asynchronous context properties and functions. It fetches data in parallel in a non-blocking fashion while ensuring that dependent data wait for their prerequisites to complete.
